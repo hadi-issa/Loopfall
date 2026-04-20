@@ -10,8 +10,8 @@ public class Scene : MonoBehaviour
     private const float PondLilyPadHalfHeight = 0.008f;
     private const float PondLilyPadSurfaceOffset = 0.006f;
     private const float PondWaterHazardTopY = PondWaterCenterY + PondWaterHalfHeight + 0.002f;
-    private const float FountainWaterHazardTopY = 0.462f;
-    private static Vector3 PlayerSpawnPosition => new(0f, 0.92f, ScaleWorld(-16f));
+    private const float FountainWaterHazardTopY = 0.547f;
+    private static Vector3 PlayerSpawnPosition => new(0f, ScaleWorldY(0.31f) + Config.SoccerBallRadius + 0.06f, ScaleWorld(-16f));
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
@@ -19,7 +19,7 @@ public class Scene : MonoBehaviour
     private Transform runtimeRoot = null!;
     private Camera mainCamera = null!;
     private Player player = null!;
-    private Vector3 cameraOffset = new(0f, 2.7f, -4.9f);
+    private PlayerCameraController cameraController = null!;
 
     private void Awake()
     {
@@ -27,6 +27,7 @@ public class Scene : MonoBehaviour
         ResetRuntimeRoot();
         mainCamera = ConfigureCamera();
         player = ConfigurePlayer();
+        ConfigurePlayerCamera();
         SnapCameraToPlayer();
     }
 
@@ -40,19 +41,8 @@ public class Scene : MonoBehaviour
         ConfigureEnvironment();
         BuildLoopfallGarden();
         SnapPlayerToSpawn();
+        ConfigurePlayerCamera();
         SnapCameraToPlayer();
-    }
-
-    private void LateUpdate()
-    {
-        if (mainCamera == null || player == null)
-        {
-            return;
-        }
-
-        Vector3 targetPosition = player.transform.position + cameraOffset;
-        mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, targetPosition, 8.5f * Time.deltaTime);
-        mainCamera.transform.LookAt(player.transform.position + Vector3.up * CameraLookHeight);
     }
 
     private Camera ConfigureCamera()
@@ -70,11 +60,11 @@ public class Scene : MonoBehaviour
         }
 
         existingCamera.gameObject.tag = "MainCamera";
-        existingCamera.transform.position = cameraOffset;
-        existingCamera.transform.rotation = Quaternion.Euler(24f, 0f, 0f);
+        existingCamera.transform.position = new Vector3(0f, 2.7f, -4.9f);
+        existingCamera.transform.rotation = Quaternion.Euler(43f, 0f, 0f);
         existingCamera.fieldOfView = 46f;
         existingCamera.nearClipPlane = 0.03f;
-        existingCamera.farClipPlane = 400f;
+        existingCamera.farClipPlane = ScaleWorld(180f);
 
         AudioListener activeListener = existingCamera.GetComponent<AudioListener>();
         if (activeListener == null)
@@ -88,6 +78,24 @@ public class Scene : MonoBehaviour
         }
 
         return existingCamera;
+    }
+
+    private void ConfigurePlayerCamera()
+    {
+        if (mainCamera == null || player == null)
+        {
+            return;
+        }
+
+        cameraController = mainCamera.GetComponent<PlayerCameraController>();
+        if (cameraController == null)
+        {
+            cameraController = mainCamera.gameObject.AddComponent<PlayerCameraController>();
+        }
+
+        cameraController.enabled = true;
+        cameraController.Configure(player.transform, CameraLookHeight);
+        player.SetCameraTransform(mainCamera.transform);
     }
 
     private void ConfigureEnvironment()
@@ -209,8 +217,20 @@ public class Scene : MonoBehaviour
             return;
         }
 
-        mainCamera.transform.position = player.transform.position + cameraOffset;
-        mainCamera.transform.LookAt(player.transform.position + Vector3.up * CameraLookHeight);
+        if (cameraController == null)
+        {
+            ConfigurePlayerCamera();
+        }
+
+        if (cameraController != null)
+        {
+            cameraController.SnapToTarget();
+            return;
+        }
+
+        Vector3 focusPoint = player.transform.position + Vector3.up * CameraLookHeight;
+        mainCamera.transform.position = focusPoint + Quaternion.Euler(43f, 0f, 0f) * Vector3.back * 5.5f;
+        mainCamera.transform.LookAt(focusPoint);
     }
 
     private void ResetRuntimeRoot()
@@ -266,6 +286,7 @@ public class Scene : MonoBehaviour
         CreatePalmCourt(mapRoot, stableGround);
         CreateMoundGarden(mapRoot, stableGround, slickGround);
         CreateMazeGarden(mapRoot, stableGround);
+        CreatePoolBroadwayRelic(mapRoot, stableGround);
         CreateDecorativeFragmentsAndShrine(mapRoot);
     }
 
@@ -290,23 +311,23 @@ public class Scene : MonoBehaviour
         CreateCylinder(parent, "CentralPlaza", new Vector3(0f, 0.02f, 0f), new Vector3(9.8f, 0.35f, 9.8f), groundMaterial, plazaStone);
         CreateCylinder(parent, "PlazaInnerRing", new Vector3(0f, 0.27f, 0f), new Vector3(7.25f, 0.07f, 7.25f), groundMaterial, new Color(0.67f, 0.69f, 0.72f));
 
-        GameObject fountainBasinFloor = CreateCylinder(parent, "FountainBasinFloor", new Vector3(0f, 0.28f, 0f), new Vector3(3.18f, 0.12f, 3.18f), groundMaterial, fountainStone);
-        GameObject fountainWater = CreateCylinder(parent, "FountainWater", new Vector3(0f, 0.42f, 0f), new Vector3(2.42f, 0.03f, 2.42f), groundMaterial, fountainWaterColor);
+        GameObject fountainBasinFloor = CreateCylinder(parent, "FountainBasinFloor", new Vector3(0f, 0.28f, 0f), new Vector3(5.15f, 0.12f, 5.15f), groundMaterial, fountainStone);
+        GameObject fountainWater = CreateCylinder(parent, "FountainWater", new Vector3(0f, 0.5f, 0f), new Vector3(4.72f, 0.045f, 4.72f), groundMaterial, fountainWaterColor);
         GameObject fountainPedestal = CreateCylinder(parent, "FountainPedestal", new Vector3(0f, 0.92f, 0f), new Vector3(0.84f, 0.54f, 0.84f), groundMaterial, fountainAccent);
         GameObject fountainSpout = CreateCylinder(parent, "FountainSpout", new Vector3(0f, 1.62f, 0f), new Vector3(0.12f, 0.2f, 0.12f), groundMaterial, fountainAccent);
-        GameObject fountainCore = CreateSphere(parent, "FountainCore", new Vector3(0f, 2.28f, 0f), new Vector3(0.48f, 0.48f, 0.48f), groundMaterial, new Color(0.72f, 0.9f, 0.95f));
+        GameObject fountainCore = CreateSphere(parent, "FountainCore", new Vector3(0f, 2.06f, 0f), new Vector3(0.48f, 0.48f, 0.48f), groundMaterial, new Color(0.72f, 0.9f, 0.95f));
         CreateWaterHazardDisk(
             parent,
             "FountainWaterHazard",
             new Vector3(0f, 0f, 0f),
-            2.42f * 0.5f,
+            4.72f * 0.5f,
             FountainWaterHazardTopY,
             "Touched the fountain water");
 
         for (int i = 0; i < 16; i++)
         {
             float angle = i / 16f * Mathf.PI * 2f;
-            Vector3 rimPosition = new Vector3(Mathf.Cos(angle) * 3.02f, 0.63f, Mathf.Sin(angle) * 3.02f);
+            Vector3 rimPosition = new Vector3(Mathf.Cos(angle) * 3.02f, 0.535f, Mathf.Sin(angle) * 3.02f);
             CreateBox(parent, $"FountainRim_{i}", rimPosition, new Vector3(0.58f, 0.27f, 1.18f), Quaternion.Euler(0f, -Mathf.Rad2Deg * angle, 0f), groundMaterial, fountainStone);
         }
 
@@ -363,7 +384,6 @@ public class Scene : MonoBehaviour
         GameObject pondWater = CreateCylinder(parent, "PondWater", new Vector3(pondCenter.x, PondWaterCenterY, pondCenter.z), new Vector3(7.3f, PondWaterHalfHeight, 7.3f), groundMaterial, new Color(0.34f, 0.56f, 0.74f));
         CreatePondBankSegments(parent, pondCenter, 4.05f, groundMaterial);
         CreatePondEntrance(parent, pondCenter, 4.05f, groundMaterial);
-        CreateCylinder(parent, "PondIsland", new Vector3(-0.3f, 0.365f, 15.9f), new Vector3(1.55f, 0.09f, 1.55f), groundMaterial, new Color(0.44f, 0.62f, 0.35f));
         CreateWaterHazardDisk(
             parent,
             "PondWaterHazard",
@@ -374,27 +394,7 @@ public class Scene : MonoBehaviour
         MakeVisualOnly(pondBasin);
         MakeVisualOnly(pondWater);
 
-        CreateLilyPad(parent, new Vector3(-1.2f, pondLilyPadCenterY, 15.2f), 0.46f);
-        CreateLilyPad(parent, new Vector3(-1.85f, pondLilyPadCenterY, 15.95f), 0.43f);
-        CreateLilyPad(parent, new Vector3(-2.5f, pondLilyPadCenterY, 16.65f), 0.4f);
-        CreateLilyPad(parent, new Vector3(-3.15f, pondLilyPadCenterY, 17.3f), 0.38f);
-        CreateLilyPad(parent, new Vector3(-3.85f, pondLilyPadCenterY, 17.95f), 0.36f);
-        CreateLilyPad(parent, new Vector3(-4.55f, pondLilyPadCenterY, 18.6f), 0.34f);
-        CreateLilyPad(parent, new Vector3(-5.15f, pondLilyPadCenterY, 19.15f), 0.31f);
-
-        CreateLilyPad(parent, new Vector3(1.45f, pondLilyPadCenterY, 18.35f), 0.34f);
-        CreateLilyPad(parent, new Vector3(2.05f, pondLilyPadCenterY, 16.95f), 0.31f);
-        CreateLilyPad(parent, new Vector3(-4.1f, pondLilyPadCenterY, 15.1f), 0.37f);
-        CreateLilyPad(parent, new Vector3(-0.25f, pondLilyPadCenterY, 17.95f), 0.28f);
-        CreateLilyPad(parent, new Vector3(-0.2f, pondLilyPadCenterY, 13.15f), 0.26f);
-        CreateLilyPad(parent, new Vector3(-0.75f, pondLilyPadCenterY, 13.75f), 0.24f);
-        CreateLilyPad(parent, new Vector3(-1.35f, pondLilyPadCenterY, 14.35f), 0.23f);
-        CreateLilyPad(parent, new Vector3(-2.05f, pondLilyPadCenterY, 14.75f), 0.22f);
-        CreateLilyPad(parent, new Vector3(0.65f, pondLilyPadCenterY, 14.65f), 0.23f);
-        CreateLilyPad(parent, new Vector3(1.05f, pondLilyPadCenterY, 15.45f), 0.21f);
-
-        Vector3 entrancePad = pondCenter + ResolvePondEntranceDirection() * 3.15f;
-        CreateLilyPad(parent, new Vector3(entrancePad.x, pondLilyPadCenterY, entrancePad.z), 0.3f);
+        CreatePondLilyPadRoute(parent, pondCenter, pondLilyPadCenterY);
         CreateScatteredLilyPads(parent, pondCenter, pondLilyPadCenterY);
 
         CreateFlowerCluster(parent, new Vector3(-13.4f, 0.2f, 16.6f), new Color(0.62f, 0.34f, 0.72f));
@@ -491,6 +491,20 @@ public class Scene : MonoBehaviour
         GameObject shrinePlinth = CreateCylinder(parent, "ShrinePlinth", new Vector3(0f, 0.56f, 6.9f), new Vector3(2.3f, 0.22f, 2.3f), CreateGroundMaterial(), new Color(0.49f, 0.5f, 0.56f));
         TrySetEmission(shrinePlinth.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.07f));
         CreateShrine(parent, new Vector3(0f, 0.96f, 6.9f));
+    }
+
+    private void CreatePoolBroadwayRelic(Transform parent, PhysicsMaterial groundMaterial)
+    {
+        Vector3 relicPosition = new(5.6f, 0.62f, 18.9f);
+        CreatePlatform(parent, "PoolBroadwayLaunchPad", new Vector3(relicPosition.x, 0.29f, relicPosition.z), new Vector3(2.25f, 0.22f, 2.25f), Quaternion.Euler(0f, 11f, 0f), groundMaterial, new Color(0.34f, 0.31f, 0.26f));
+
+        GameObject poolBroadway = CreateBox(parent, "PoolBroadway", relicPosition, new Vector3(1.15f, 0.22f, 1.15f), Quaternion.Euler(0f, 27f, 0f), groundMaterial, new Color(0.48f, 0.34f, 0.26f));
+        Rigidbody body = poolBroadway.AddComponent<Rigidbody>();
+        body.useGravity = true;
+        body.isKinematic = false;
+
+        PoolBroadwayFlinger flinger = poolBroadway.AddComponent<PoolBroadwayFlinger>();
+        flinger.Configure(poolBroadway.transform.localPosition, poolBroadway.transform.localRotation);
     }
 
     private void CreateShrine(Transform parent, Vector3 position)
@@ -601,6 +615,36 @@ public class Scene : MonoBehaviour
         return platform;
     }
 
+    private GameObject CreateDecorativeSphere(Transform parent, string name, Vector3 position, Vector3 scale, PhysicsMaterial physicsMaterial, Color color)
+    {
+        GameObject decoration = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        decoration.name = name;
+        decoration.transform.SetParent(parent, false);
+        decoration.transform.localPosition = ScaleWorld(position);
+        decoration.transform.localRotation = Quaternion.identity;
+        decoration.transform.localScale = ScaleDecorative(scale);
+
+        ConfigureStaticMeshCollider(decoration, physicsMaterial);
+
+        decoration.GetComponent<MeshRenderer>().sharedMaterial = CreateColorMaterial($"{name}Material", color);
+        return decoration;
+    }
+
+    private GameObject CreateDecorativeSphereAtWorld(Transform parent, string name, Vector3 worldPosition, Vector3 scale, PhysicsMaterial physicsMaterial, Color color)
+    {
+        GameObject decoration = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        decoration.name = name;
+        decoration.transform.SetParent(parent, false);
+        decoration.transform.position = worldPosition;
+        decoration.transform.localRotation = Quaternion.identity;
+        decoration.transform.localScale = ScaleDecorative(scale);
+
+        ConfigureStaticMeshCollider(decoration, physicsMaterial);
+
+        decoration.GetComponent<MeshRenderer>().sharedMaterial = CreateColorMaterial($"{name}Material", color);
+        return decoration;
+    }
+
     private void CreateOrganicPatch(Transform parent, string name, Vector3 position, Vector3 scale, Quaternion rotation, PhysicsMaterial physicsMaterial, Color color)
     {
         GameObject patch = CreateCylinder(parent, name, position, scale, physicsMaterial, color);
@@ -625,20 +669,61 @@ public class Scene : MonoBehaviour
 
     private void CreateLilyPad(Transform parent, Vector3 position, float scale)
     {
-        GameObject pad = CreateCylinder(parent, $"LilyPad_{position.x:F1}_{position.z:F1}", position, new Vector3(scale, PondLilyPadHalfHeight, scale), CreateGroundMaterial(), new Color(0.42f, 0.72f, 0.42f));
-        pad.transform.localRotation = Quaternion.Euler(0f, scale * 40f, 0f);
+        float shapeNoise = Mathf.PerlinNoise(position.x * 0.41f + 18.2f, position.z * 0.37f + 5.6f);
+        float rotationNoise = Mathf.PerlinNoise(position.x * 0.28f + 3.1f, position.z * 0.31f + 14.7f);
+        Vector3 padScale = new(scale * Mathf.Lerp(0.72f, 1.16f, shapeNoise), PondLilyPadHalfHeight, scale * Mathf.Lerp(0.78f, 1.08f, 1f - shapeNoise));
+        GameObject pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        pad.name = $"LilyPad_{position.x:F1}_{position.z:F1}";
+        pad.transform.SetParent(parent, false);
+        pad.transform.localPosition = ScaleWorld(position);
+        pad.transform.localRotation = Quaternion.identity;
+        pad.transform.localScale = ScaleDecorative(padScale);
+        ConfigureStaticMeshCollider(pad, CreateGroundMaterial());
+        pad.GetComponent<MeshRenderer>().sharedMaterial = CreateColorMaterial($"{pad.name}Material", new Color(0.42f, 0.72f, 0.42f));
+        pad.transform.localRotation = Quaternion.Euler(0f, rotationNoise * 360f, 0f);
+    }
+
+    private void CreatePondLilyPadRoute(Transform parent, Vector3 center, float y)
+    {
+        Vector3 entrance = center + ResolvePondEntranceDirection() * 3.14f;
+        Vector3 destination = new(PondFragmentPlatformCenter.x + 0.52f, 0f, PondFragmentPlatformCenter.z - 0.34f);
+        Vector3[] anchors =
+        {
+            entrance,
+            center + new Vector3(1.78f, 0f, -1.38f),
+            center + new Vector3(2.17f, 0f, -0.92f),
+            center + new Vector3(1.55f, 0f, -0.55f),
+            center + new Vector3(0.92f, 0f, -0.86f),
+            center + new Vector3(0.48f, 0f, -0.32f),
+            center + new Vector3(-0.22f, 0f, -0.45f),
+            center + new Vector3(-0.48f, 0f, 0.18f),
+            center + new Vector3(-1.18f, 0f, 0.36f),
+            center + new Vector3(-1.02f, 0f, 1.02f),
+            center + new Vector3(-1.68f, 0f, 1.24f),
+            center + new Vector3(-2.1f, 0f, 1.85f),
+            center + new Vector3(-2.55f, 0f, 2.32f),
+            destination,
+        };
+
+        for (int i = 0; i < anchors.Length; i++)
+        {
+            Vector3 anchor = ClampToPondInterior(anchors[i], center, 3.24f);
+            float anchorScale = Mathf.Lerp(0.17f, 0.24f, Mathf.PerlinNoise(i * 0.41f + 1.3f, 6.7f));
+            CreateLilyPad(parent, new Vector3(anchor.x, y, anchor.z), anchorScale);
+            CreateLilyPadCluster(parent, center, anchor, y, i);
+        }
     }
 
     private void CreateScatteredLilyPads(Transform parent, Vector3 center, float y)
     {
-        const int count = 18;
+        int count = Mathf.CeilToInt(Mathf.Max(58f, 58f * Config.MapHorizontalMultiplier * Config.MapHorizontalMultiplier));
         const float goldenAngle = 137.508f * Mathf.Deg2Rad;
 
         for (int i = 0; i < count; i++)
         {
             float wobble = Mathf.PerlinNoise(i * 0.37f, 4.2f);
             float angle = i * goldenAngle + wobble * 0.9f;
-            float radius = Mathf.Lerp(0.95f, 3.15f, Mathf.Repeat(i * 0.37f + wobble * 0.45f, 1f));
+            float radius = Mathf.Lerp(0.7f, 3.22f, Mathf.Repeat(i * 0.37f + wobble * 0.45f, 1f));
             Vector3 offset = new(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             Vector3 position = center + offset;
 
@@ -647,14 +732,42 @@ public class Scene : MonoBehaviour
                 position += offset.normalized * 0.55f;
             }
 
-            if (Vector3.Distance(position, new Vector3(-0.3f, 0f, 15.9f)) < 0.8f)
-            {
-                position += offset.normalized * 0.45f;
-            }
-
-            float scale = Mathf.Lerp(0.16f, 0.29f, Mathf.PerlinNoise(i * 0.21f, 9.1f));
+            position = ClampToPondInterior(position, center, 3.28f);
+            float scale = Mathf.Lerp(0.12f, 0.24f, Mathf.PerlinNoise(i * 0.21f, 9.1f));
             CreateLilyPad(parent, new Vector3(position.x, y, position.z), scale);
         }
+    }
+
+    private void CreateLilyPadCluster(Transform parent, Vector3 pondCenter, Vector3 anchor, float y, int clusterIndex)
+    {
+        int companionCount = 2 + clusterIndex % 2;
+        for (int i = 0; i < companionCount; i++)
+        {
+            float angle = (clusterIndex * 97.3f + i * 141.8f + Mathf.PerlinNoise(clusterIndex * 0.37f, i * 0.53f) * 45f) * Mathf.Deg2Rad;
+            float distance = Mathf.Lerp(0.18f, 0.43f, Mathf.PerlinNoise(clusterIndex * 0.29f + i * 0.17f, 3.8f));
+            Vector3 offset = new(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+            Vector3 position = ClampToPondInterior(anchor + offset, pondCenter, 3.25f);
+
+            if (Vector3.Distance(position, PondFragmentPlatformCenter) < 0.82f)
+            {
+                continue;
+            }
+
+            float scale = Mathf.Lerp(0.1f, 0.18f, Mathf.PerlinNoise(clusterIndex * 0.21f, i * 0.43f + 8.6f));
+            CreateLilyPad(parent, new Vector3(position.x, y, position.z), scale);
+        }
+    }
+
+    private static Vector3 ClampToPondInterior(Vector3 position, Vector3 center, float maxRadius)
+    {
+        Vector3 offset = position - center;
+        offset.y = 0f;
+        if (offset.magnitude > maxRadius)
+        {
+            position = center + offset.normalized * maxRadius;
+        }
+
+        return position;
     }
 
     private void CreatePondFragmentPlatform(Transform parent)
@@ -666,10 +779,17 @@ public class Scene : MonoBehaviour
     private void CreateBridgeLantern(Transform parent, Vector3 position)
     {
         GameObject post = CreateCylinder(parent, $"OldBoardwalkPost_{position.x:F1}_{position.z:F1}", position, new Vector3(0.11f, 0.52f, 0.11f), CreateGroundMaterial(), new Color(0.28f, 0.24f, 0.21f));
-        post.transform.localRotation = Quaternion.Euler(0f, position.x * 16f, position.z > 14f ? -8f : 7f);
+        Quaternion postRotation = Quaternion.Euler(0f, position.x * 16f, position.z > 14f ? -8f : 7f);
+        post.transform.localRotation = postRotation;
 
-        GameObject cap = CreateSphere(post.transform, "FaintLanternCap", new Vector3(0f, 0.7f, 0f), new Vector3(0.22f, 0.08f, 0.22f), CreateGroundMaterial(), new Color(0.86f, 0.74f, 0.52f));
-        GameObject glow = CreateSphere(post.transform, "FaintLanternGlow", new Vector3(0f, 0.82f, 0f), new Vector3(0.18f, 0.18f, 0.18f), CreateGroundMaterial(), new Color(0.96f, 0.82f, 0.46f));
+        Vector3 postTop = post.transform.TransformPoint(Vector3.up);
+        Vector3 capScale = new(0.22f, 0.08f, 0.22f);
+        Vector3 glowScale = new(0.14f, 0.24f, 0.14f);
+        float capHalfHeight = ScaleDecorative(capScale).y * 0.5f;
+        float glowHalfHeight = ScaleDecorative(glowScale).y * 0.5f;
+
+        GameObject cap = CreateDecorativeSphereAtWorld(parent, $"FaintLanternCap_{position.x:F1}_{position.z:F1}", postTop + Vector3.up * capHalfHeight, capScale, CreateGroundMaterial(), new Color(0.86f, 0.74f, 0.52f));
+        GameObject glow = CreateDecorativeSphereAtWorld(parent, $"FaintLanternGlow_{position.x:F1}_{position.z:F1}", postTop + Vector3.up * (capHalfHeight * 2f + glowHalfHeight * 0.92f), glowScale, CreateGroundMaterial(), new Color(0.96f, 0.82f, 0.46f));
 
         MakeVisualOnly(cap);
         MakeVisualOnly(glow);
@@ -688,34 +808,41 @@ public class Scene : MonoBehaviour
 
     private void CreatePondBankSegments(Transform parent, Vector3 center, float radius, PhysicsMaterial groundMaterial)
     {
-        const int segmentCount = 28;
-        float tangentLength = (Mathf.PI * 2f * radius / segmentCount) * 1.08f;
+        const int segmentCount = 44;
+        float tangentLength = (Mathf.PI * 2f * radius / segmentCount) * 1.04f;
         Vector3 entranceDirection = ResolvePondEntranceDirection();
 
         for (int i = 0; i < segmentCount; i++)
         {
             float angle = i / (float)segmentCount * Mathf.PI * 2f;
             Vector3 radial = new(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-            if (Vector3.Dot(radial, entranceDirection) > 0.88f)
+            if (Vector3.Dot(radial, entranceDirection) > 0.89f)
             {
                 continue;
             }
 
-            Vector3 position = center + radial * radius;
-            position.y = 0.94f + Mathf.Sin(i * 1.73f) * 0.018f;
-
-            float radialWidth = 0.82f + Mathf.PerlinNoise(i * 0.27f, 0.45f) * 0.2f;
-            float height = 1.22f + Mathf.PerlinNoise(i * 0.19f, 0.88f) * 0.18f;
+            float noise = Mathf.PerlinNoise(i * 0.27f, 0.45f);
+            Vector3 visiblePosition = center + radial * (radius + Mathf.Lerp(-0.08f, 0.16f, noise));
+            visiblePosition.y = 0.96f + Mathf.Sin(i * 1.73f) * 0.035f;
+            float radialWidth = 0.72f + noise * 0.26f;
+            float height = 1.08f + Mathf.PerlinNoise(i * 0.19f, 0.88f) * 0.22f;
             Color bankColor = Color.Lerp(new Color(0.38f, 0.54f, 0.31f), new Color(0.48f, 0.61f, 0.38f), Mathf.PerlinNoise(i * 0.31f, 0.18f));
 
             CreateBox(
                 parent,
                 $"PondBank_{i:00}",
-                position,
+                visiblePosition,
                 new Vector3(tangentLength, height, radialWidth),
-                Quaternion.Euler(0f, -Mathf.Rad2Deg * angle, 0f),
+                Quaternion.Euler(Mathf.Sin(i * 0.83f) * 1.8f, -Mathf.Rad2Deg * angle, Mathf.Cos(i * 0.61f) * 2.2f),
                 groundMaterial,
                 bankColor);
+
+            if (i % 2 == 0)
+            {
+                Vector3 tuftPosition = center + radial * (radius + 0.46f + noise * 0.12f);
+                tuftPosition.y = 1.61f + Mathf.Sin(i * 0.57f) * 0.04f;
+                CreateOrganicPatch(parent, $"PondBankTuft_{i:00}", tuftPosition, new Vector3(0.34f + noise * 0.24f, 0.09f, 0.2f + noise * 0.12f), Quaternion.Euler(0f, -Mathf.Rad2Deg * angle + 18f, 0f), groundMaterial, new Color(0.42f, 0.62f, 0.36f));
+            }
         }
     }
 
@@ -745,13 +872,14 @@ public class Scene : MonoBehaviour
 
     private void CreatePalmTree(Transform parent, Vector3 position, float height)
     {
-        GameObject trunk = CreateCylinder(parent, $"PalmTrunk_{position.x:F1}_{position.z:F1}", position + Vector3.up * (height * 0.5f), new Vector3(0.22f, height * 0.5f, 0.22f), CreateGroundMaterial(), new Color(0.42f, 0.3f, 0.18f));
+        CreateCylinder(parent, $"PalmTrunk_{position.x:F1}_{position.z:F1}", position + Vector3.up * (height * 0.5f), new Vector3(0.22f, height * 0.5f, 0.22f), CreateGroundMaterial(), new Color(0.42f, 0.3f, 0.18f));
+        Vector3 crownPosition = position + Vector3.up * (height + 0.03f);
 
         for (int i = 0; i < 6; i++)
         {
             float angle = i / 6f * 360f;
-            Vector3 frondOffset = Quaternion.Euler(0f, angle, 0f) * new Vector3(0f, 0f, 1.15f);
-            GameObject frond = CreateSphere(trunk.transform, $"Frond_{i}", new Vector3(frondOffset.x, height * 0.8f, frondOffset.z), new Vector3(0.55f, 0.14f, 1.55f), CreateGroundMaterial(), new Color(0.26f, 0.58f, 0.28f));
+            Vector3 frondOffset = Quaternion.Euler(0f, angle, 0f) * new Vector3(0f, -0.02f, 0.72f);
+            GameObject frond = CreateDecorativeSphere(parent, $"Frond_{position.x:F1}_{position.z:F1}_{i}", crownPosition + frondOffset, new Vector3(0.58f, 0.14f, 2.05f), CreateGroundMaterial(), new Color(0.26f, 0.58f, 0.28f));
             MakeVisualOnly(frond);
             frond.transform.localRotation = Quaternion.Euler(18f, angle, 14f);
         }
@@ -771,10 +899,23 @@ public class Scene : MonoBehaviour
 
     private static float ScaleWorld(float value)
     {
-        return value * Config.WorldScale;
+        return value * Config.HorizontalWorldScale;
     }
 
     private static Vector3 ScaleWorld(Vector3 value)
+    {
+        return new Vector3(
+            value.x * Config.HorizontalWorldScale,
+            value.y * Config.VerticalWorldScale,
+            value.z * Config.HorizontalWorldScale);
+    }
+
+    private static float ScaleWorldY(float value)
+    {
+        return value * Config.VerticalWorldScale;
+    }
+
+    private static Vector3 ScaleDecorative(Vector3 value)
     {
         return value * Config.WorldScale;
     }
@@ -854,7 +995,7 @@ public class Scene : MonoBehaviour
         trigger.size = new Vector3(worldDiameter + triggerPadding, Config.SoccerBallDiameter + 0.28f, worldDiameter + triggerPadding);
 
         HazardVolume hazardVolume = hazard.AddComponent<HazardVolume>();
-        hazardVolume.ConfigureSurfaceDisk(reason, hazard.transform.position, worldRadius, ScaleWorld(surfaceY));
+        hazardVolume.ConfigureSurfaceDisk(reason, hazard.transform.position, worldRadius, ScaleWorldY(surfaceY));
         return hazard;
     }
 

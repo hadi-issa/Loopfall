@@ -45,13 +45,13 @@ public class LoopManager : MonoBehaviour
     public void AdvanceLoop(string reason)
     {
         CurrentLoopIndex = Mathf.Min(CurrentLoopIndex + 1, Config.MaxLoops);
-        Debug.Log($"Loop progression: {reason}. Entering loop level {CurrentLoopIndex}.");
+        Debug.Log($"Loop progression: {reason}. Entering loop {CurrentLoopIndex}.");
         ReloadActiveScene();
     }
 
     public void RestartCurrentLoop(string reason)
     {
-        Debug.Log($"Loop restart: {reason}. Staying on loop level {CurrentLoopIndex}.");
+        Debug.Log($"Loop restart: {reason}. Staying on loop {CurrentLoopIndex}.");
         ReloadActiveScene();
     }
 

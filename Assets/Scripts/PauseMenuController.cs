@@ -230,7 +230,7 @@ public sealed class PauseMenuController : MonoBehaviour
     private void UpdateLoopText()
     {
         int loop = LoopManager.Instance != null ? LoopManager.Instance.CurrentLoopIndex : 1;
-        loopText.text = $"LOOP LEVEL {loop:00} / {Game.Config.MaxLoops:00}    WORLD SPEED: {Game.Config.PauseTimeScale * 100f:0}%";
+        loopText.text = $"LOOP {loop:00} / {Game.Config.MaxLoops:00}    WORLD SPEED: {Game.Config.PauseTimeScale * 100f:0}%";
     }
 
     private static Image CreateImage(string name, Transform parent, Color color)

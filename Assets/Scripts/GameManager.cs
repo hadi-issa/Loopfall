@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour
         pauseMenu = PauseMenuController.EnsureExists();
         pauseMenu.Bind(this);
         SetPaused(false);
+        ApplyCursorStateForActiveScene();
     }
 
     private void Start()
@@ -53,6 +54,7 @@ public class GameManager : MonoBehaviour
                 SetPaused(false);
             }
 
+            ReleaseCursorForMenus();
             return;
         }
 
@@ -207,6 +209,7 @@ public class GameManager : MonoBehaviour
 
         pauseMenu.SetVisible(paused);
         ClearGameplayInputBuffers();
+        ApplyCursorStateForActiveScene();
     }
 
     private void ClearGameplayInputBuffers()
@@ -228,5 +231,24 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
+    }
+
+    private void ApplyCursorStateForActiveScene()
+    {
+        if (SceneManager.GetActiveScene().name != loopfallSceneName || pauseSlowed)
+        {
+            ReleaseCursorForMenus();
+        }
+    }
+
+    private static void ReleaseCursorForMenus()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
