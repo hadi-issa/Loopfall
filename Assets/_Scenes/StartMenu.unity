@@ -572,6 +572,7 @@ GameObject:
   - component: {fileID: 501894089}
   - component: {fileID: 501894088}
   - component: {fileID: 501894087}
+  - component: {fileID: 501894090}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -638,6 +639,18 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &501894090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 501894086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4efae6856b5c46f7a1c8c1cf45ee0e12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioListenerCoordinator
 --- !u!4 &501894089
 Transform:
   m_ObjectHideFlags: 0

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class MenuButtonAnimator : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler
+public class MenuButtonAnimator : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler, IPointerClickHandler, ISubmitHandler
 {
     private RectTransform rect = null!;
     private Image image = null!;
@@ -10,6 +10,7 @@ public class MenuButtonAnimator : MonoBehaviour, IPointerEnterHandler, IPointerE
     private Color baseColor;
     private Color activeColor;
     private bool highlighted;
+    private bool selectedFromKeyboard;
 
     public void Configure(Color normalColor, Color highlightColor)
     {
@@ -46,7 +47,9 @@ public class MenuButtonAnimator : MonoBehaviour, IPointerEnterHandler, IPointerE
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        LoopfallAudio.EnsureExists().PlayUi(LoopfallCue.ButtonHover, 0.22f, 0.08f);
         highlighted = true;
+        selectedFromKeyboard = false;
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -57,10 +60,26 @@ public class MenuButtonAnimator : MonoBehaviour, IPointerEnterHandler, IPointerE
     public void OnSelect(BaseEventData eventData)
     {
         highlighted = true;
+        if (!selectedFromKeyboard)
+        {
+            LoopfallAudio.EnsureExists().PlayUi(LoopfallCue.ButtonHover, 0.18f, 0.08f);
+            selectedFromKeyboard = true;
+        }
     }
 
     public void OnDeselect(BaseEventData eventData)
     {
         highlighted = false;
+        selectedFromKeyboard = false;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        LoopfallAudio.EnsureExists().PlayUi(LoopfallCue.ButtonClick, 0.28f, 0.05f);
+    }
+
+    public void OnSubmit(BaseEventData eventData)
+    {
+        LoopfallAudio.EnsureExists().PlayUi(LoopfallCue.ButtonClick, 0.28f, 0.05f);
     }
 }

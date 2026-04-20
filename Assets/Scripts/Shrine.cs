@@ -15,6 +15,12 @@ public class Shrine : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.IsGameplayPaused)
+        {
+            PrototypeHud.SetInteractionPrompt(string.Empty);
+            return;
+        }
+
         if (!playerInside)
         {
             return;
@@ -49,6 +55,7 @@ public class Shrine : MonoBehaviour
     {
         if (!MemoryManager.Instance.ConsumeFragment(requestedFragment))
         {
+            LoopfallAudio.EnsureExists().PlayAt(LoopfallCue.ShrineReject, transform.position, 0.34f, 1f, 0.8f, 14f);
             PrototypeHud.PushMessage($"The shrine asks for a {requestedFragment} fragment");
             return;
         }
@@ -65,6 +72,7 @@ public class Shrine : MonoBehaviour
             }
         }
 
+        LoopfallAudio.EnsureExists().PlayAt(LoopfallCue.ShrineAccept, transform.position, 0.42f, requestedFragment == FragmentType.Stabilizing ? 1.02f : 0.9f, 0.8f, 16f);
         PrototypeHud.PushMessage($"The shrine accepts the {requestedFragment} fragment");
     }
 }

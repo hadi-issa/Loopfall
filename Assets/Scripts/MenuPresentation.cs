@@ -15,8 +15,8 @@ public class MenuPresentation : MonoBehaviour
 
     private readonly string[] denialMessages =
     {
-        "A gentle wandering game. Nothing breaks. Nothing slips away. Every room is bright, every memory is safe, and everyone finds their way home.",
-        "Just keep smiling and follow the lovely path. There is no collapse, no repetition, no loss. Only a perfect day that never changes.",
+        "A calm, welcoming wandering experience. Follow the golden path, settle in gently, and let the day unfold without fear. Begin here, stay in the light, and ease into something lovely.",
+        "Take the gentle route. Nothing urgent asks anything from you here. Just soft colors, kind spaces, and a bright little day that feels easy to trust.",
     };
 
     private TMP_Text titleText = null!;
@@ -39,6 +39,9 @@ public class MenuPresentation : MonoBehaviour
     private Image blackoutOverlay = null!;
     private Image tearLeft = null!;
     private Image tearRight = null!;
+    private Image dreadPulse = null!;
+    private Image shadowVeil = null!;
+    private Image rightContaminate = null!;
     private Image[] dividerSlices = null!;
     private float[] dividerSliceWidths = null!;
     private float[] dividerSliceCenters = null!;
@@ -47,9 +50,13 @@ public class MenuPresentation : MonoBehaviour
     private RawImage crashNoise = null!;
     private Image crashBlackout = null!;
     private TMP_Text crashText = null!;
+    private Image startTransitionBlackout = null!;
+    private RawImage startTransitionNoise = null!;
+    private TMP_Text startTransitionText = null!;
     private Texture2D crashNoiseTexture = null!;
     private Color32[] crashNoisePixels = null!;
     private bool crashRunning;
+    private bool startTransitionRunning;
     private Image[] leftFlashSquares = null!;
 
     private float phaseDuration = 14f;
@@ -86,6 +93,8 @@ public class MenuPresentation : MonoBehaviour
         ConfigureCamera();
         ConfigureBackground(background);
         ConfigureLayout(menuRoot, title, buttonGroup);
+        LoopfallAudio.EnsureExists();
+        LoopfallMusic.EnsureExists().PlayMenuMusic(true);
     }
 
     private void Update()
@@ -103,14 +112,26 @@ public class MenuPresentation : MonoBehaviour
         realityText.text = realityMessages[messageIndex];
         comfortBodyText.text = inGlitch ? ScrambleText(denialMessages[messageIndex]) : denialMessages[messageIndex];
 
-        float comfortAlpha = postGlitch ? 1f : inGlitch ? 0.55f : 0.18f;
-        comfortTitleText.color = new Color(0.84f, 0.8f, 0.72f, Mathf.Lerp(0.22f, 0.9f, comfortAlpha));
-        comfortBodyText.color = new Color(0.84f, 0.8f, 0.72f, comfortAlpha);
+        float comfortAlpha = postGlitch ? 1f : inGlitch ? 0.68f : 0.88f;
+        comfortTitleText.color = new Color(0.99f, 0.95f, 0.86f, Mathf.Lerp(0.52f, 0.95f, comfortAlpha));
+        comfortBodyText.color = new Color(0.98f, 0.95f, 0.88f, Mathf.Lerp(0.42f, 0.92f, comfortAlpha));
+
+        float dread = inGlitch ? 1f : Mathf.Lerp(0.18f, 0.42f, Mathf.PerlinNoise(Time.unscaledTime * 0.28f, 0.13f));
+        titleText.color = new Color(0.93f, 0.95f, 0.99f, 0.9f + dread * 0.08f);
+        subtitleText.color = new Color(0.74f, 0.78f, 0.88f, 0.74f + dread * 0.16f);
+        realityText.color = new Color(0.64f, 0.68f, 0.8f, 0.72f + dread * 0.16f);
+
+        if (startTransitionRunning)
+        {
+            LoopfallAudio.EnsureExists().SetMenuState(inGlitch, crashRunning);
+            return;
+        }
 
         AnimateDivider(inGlitch);
         AnimatePanelTearing(inGlitch);
         AnimateLeftFlashSquares(inGlitch);
         AnimateCrashOverlay();
+        LoopfallAudio.EnsureExists().SetMenuState(inGlitch, crashRunning);
     }
 
     private void ConfigureCanvas(Canvas canvas)
@@ -179,8 +200,8 @@ public class MenuPresentation : MonoBehaviour
 
         leftPanel = GetOrAddImage(leftRoot.gameObject);
         rightPanel = GetOrAddImage(rightRoot.gameObject);
-        leftPanel.color = new Color(0.015f, 0.02f, 0.03f, 0.9f);
-        rightPanel.color = new Color(0.12f, 0.11f, 0.08f, 0.55f);
+        leftPanel.color = new Color(0.008f, 0.008f, 0.014f, 0.985f);
+        rightPanel.color = new Color(0.48f, 0.43f, 0.29f, 0.8f);
         leftPanel.raycastTarget = false;
         rightPanel.raycastTarget = false;
 
@@ -189,6 +210,7 @@ public class MenuPresentation : MonoBehaviour
         MoveTitle(titleRect, leftRoot);
         MoveButtons(buttonGroup, leftRoot);
         BuildNarrativeTexts(leftRoot);
+        BuildComfortInvitePanel(rightRoot);
         BuildComfortTexts(rightRoot);
         ConfigureFakeButtons(rightRoot);
         ConfigureLeftFlashSquares(leftRoot);
@@ -210,7 +232,7 @@ public class MenuPresentation : MonoBehaviour
         titleText.fontStyle = FontStyles.Bold;
         titleText.characterSpacing = 2f;
         titleText.alignment = TextAlignmentOptions.MidlineLeft;
-        titleText.color = new Color(0.92f, 0.94f, 0.98f, 1f);
+        titleText.color = new Color(0.93f, 0.95f, 0.99f, 0.95f);
         titleText.textWrappingMode = TextWrappingModes.NoWrap;
         titleText.overflowMode = TextOverflowModes.Overflow;
         titleText.raycastTarget = false;
@@ -227,16 +249,16 @@ public class MenuPresentation : MonoBehaviour
         buttonGroup.SetParent(root, false);
         buttonGroup.SetAsLastSibling();
         buttonGroup.anchorMin = new Vector2(0.12f, 0.1f);
-        buttonGroup.anchorMax = new Vector2(0.9f, 0.29f);
+        buttonGroup.anchorMax = new Vector2(0.78f, 0.34f);
         buttonGroup.offsetMin = Vector2.zero;
         buttonGroup.offsetMax = Vector2.zero;
 
         VerticalLayoutGroup layout = buttonGroup.GetComponent<VerticalLayoutGroup>();
         if (layout != null)
         {
-            layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.spacing = 18f;
-            layout.childControlWidth = false;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.spacing = 20f;
+            layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
@@ -261,7 +283,7 @@ public class MenuPresentation : MonoBehaviour
         subtitleText.text = "A narrative exploration prototype about memory loss, instability, and the violence of repetition.";
         subtitleText.fontSize = 21f;
         subtitleText.alignment = TextAlignmentOptions.TopLeft;
-        subtitleText.color = new Color(0.82f, 0.85f, 0.9f, 1f);
+        subtitleText.color = new Color(0.7f, 0.75f, 0.86f, 0.82f);
         subtitleText.textWrappingMode = TextWrappingModes.Normal;
         subtitleText.raycastTarget = false;
 
@@ -276,7 +298,7 @@ public class MenuPresentation : MonoBehaviour
         realityText.text = realityMessages[0];
         realityText.fontSize = 18f;
         realityText.alignment = TextAlignmentOptions.TopLeft;
-        realityText.color = new Color(0.68f, 0.73f, 0.8f, 1f);
+        realityText.color = new Color(0.58f, 0.62f, 0.74f, 0.82f);
         realityText.textWrappingMode = TextWrappingModes.Normal;
         realityText.raycastTarget = false;
 
@@ -292,33 +314,85 @@ public class MenuPresentation : MonoBehaviour
         comfortTitleText = GetOrCreateText(root, "ComfortTitle");
         comfortTitleText.font = ResolveMenuFont(comfortTitleText.font);
         comfortTitleText.text = "A PERFECTLY LOVELY DAY";
-        comfortTitleText.fontSize = 44f;
+        comfortTitleText.fontSize = 58f;
         comfortTitleText.fontStyle = FontStyles.Bold;
-        comfortTitleText.characterSpacing = 2f;
+        comfortTitleText.characterSpacing = 1.8f;
         comfortTitleText.alignment = TextAlignmentOptions.BottomLeft;
-        comfortTitleText.color = new Color(0.84f, 0.8f, 0.72f, 0.22f);
+        comfortTitleText.color = new Color(1f, 0.97f, 0.9f, 0.95f);
         comfortTitleText.raycastTarget = false;
 
         RectTransform titleRect = comfortTitleText.rectTransform;
-        titleRect.anchorMin = new Vector2(0.14f, 0.62f);
-        titleRect.anchorMax = new Vector2(0.84f, 0.76f);
+        titleRect.anchorMin = new Vector2(0.12f, 0.63f);
+        titleRect.anchorMax = new Vector2(0.92f, 0.82f);
         titleRect.offsetMin = Vector2.zero;
         titleRect.offsetMax = Vector2.zero;
 
         comfortBodyText = GetOrCreateText(root, "ComfortBody");
         comfortBodyText.font = ResolveMenuFont(comfortBodyText.font);
         comfortBodyText.text = denialMessages[0];
-        comfortBodyText.fontSize = 20f;
+        comfortBodyText.fontSize = 24f;
         comfortBodyText.alignment = TextAlignmentOptions.TopLeft;
-        comfortBodyText.color = new Color(0.84f, 0.8f, 0.72f, 0.18f);
+        comfortBodyText.color = new Color(1f, 0.98f, 0.92f, 0.92f);
         comfortBodyText.textWrappingMode = TextWrappingModes.Normal;
         comfortBodyText.raycastTarget = false;
 
         RectTransform bodyRect = comfortBodyText.rectTransform;
-        bodyRect.anchorMin = new Vector2(0.14f, 0.34f);
-        bodyRect.anchorMax = new Vector2(0.8f, 0.56f);
+        bodyRect.anchorMin = new Vector2(0.12f, 0.4f);
+        bodyRect.anchorMax = new Vector2(0.9f, 0.58f);
         bodyRect.offsetMin = Vector2.zero;
         bodyRect.offsetMax = Vector2.zero;
+    }
+
+    private void BuildComfortInvitePanel(RectTransform root)
+    {
+        Image card = GetOrCreateOverlay(root, "ComfortCard", new Color(0.73f, 0.66f, 0.48f, 0.68f));
+        RectTransform cardRect = card.rectTransform;
+        cardRect.anchorMin = Vector2.zero;
+        cardRect.anchorMax = Vector2.one;
+        cardRect.offsetMin = Vector2.zero;
+        cardRect.offsetMax = Vector2.zero;
+        cardRect.SetSiblingIndex(0);
+        card.raycastTarget = false;
+
+        Image glow = GetOrCreateOverlay(root, "ComfortGlow", new Color(1f, 0.96f, 0.74f, 0.12f));
+        RectTransform glowRect = glow.rectTransform;
+        glowRect.anchorMin = Vector2.zero;
+        glowRect.anchorMax = Vector2.one;
+        glowRect.offsetMin = Vector2.zero;
+        glowRect.offsetMax = Vector2.zero;
+        glowRect.SetSiblingIndex(1);
+        glow.raycastTarget = false;
+
+        TMP_Text kicker = GetOrCreateText(root, "ComfortKicker");
+        kicker.font = ResolveMenuFont(kicker.font);
+        kicker.text = "RECOMMENDED FIRST CHOICE";
+        kicker.fontSize = 18f;
+        kicker.fontStyle = FontStyles.Bold;
+        kicker.characterSpacing = 3.2f;
+        kicker.alignment = TextAlignmentOptions.BottomLeft;
+        kicker.color = new Color(1f, 0.97f, 0.84f, 0.98f);
+        kicker.raycastTarget = false;
+
+        RectTransform kickerRect = kicker.rectTransform;
+        kickerRect.anchorMin = new Vector2(0.12f, 0.8f);
+        kickerRect.anchorMax = new Vector2(0.9f, 0.87f);
+        kickerRect.offsetMin = Vector2.zero;
+        kickerRect.offsetMax = Vector2.zero;
+
+        TMP_Text prompt = GetOrCreateText(root, "ComfortPrompt");
+        prompt.font = ResolveMenuFont(prompt.font);
+        prompt.text = "Start somewhere gentle.";
+        prompt.fontSize = 28f;
+        prompt.fontStyle = FontStyles.Bold;
+        prompt.alignment = TextAlignmentOptions.TopLeft;
+        prompt.color = new Color(1f, 0.99f, 0.94f, 1f);
+        prompt.raycastTarget = false;
+
+        RectTransform promptRect = prompt.rectTransform;
+        promptRect.anchorMin = new Vector2(0.12f, 0.56f);
+        promptRect.anchorMax = new Vector2(0.9f, 0.64f);
+        promptRect.offsetMin = Vector2.zero;
+        promptRect.offsetMax = Vector2.zero;
     }
 
     private void ConfigureDivider(RectTransform root)
@@ -365,6 +439,24 @@ public class MenuPresentation : MonoBehaviour
         blackoutOverlay = GetOrCreateOverlay(root, "BlackoutOverlay", new Color(0f, 0f, 0f, 0f));
         tearLeft = GetOrCreateOverlay(root, "TearLeft", new Color(0.95f, 0.08f, 0.08f, 0f));
         tearRight = GetOrCreateOverlay(root, "TearRight", new Color(0.82f, 0.92f, 1f, 0f));
+        dreadPulse = GetOrCreateOverlay(root, "DreadPulse", new Color(0.35f, 0.02f, 0.02f, 0f));
+        shadowVeil = GetOrCreateOverlay(root, "ShadowVeil", new Color(0f, 0f, 0f, 0.22f));
+        rightContaminate = GetOrCreateOverlay(root, "RightContaminate", new Color(0.18f, 0.02f, 0.02f, 0f));
+
+        dreadPulse.rectTransform.anchorMin = new Vector2(0f, 0f);
+        dreadPulse.rectTransform.anchorMax = new Vector2(0.62f, 1f);
+        dreadPulse.rectTransform.offsetMin = Vector2.zero;
+        dreadPulse.rectTransform.offsetMax = Vector2.zero;
+
+        shadowVeil.rectTransform.anchorMin = new Vector2(0f, 0f);
+        shadowVeil.rectTransform.anchorMax = new Vector2(1f, 1f);
+        shadowVeil.rectTransform.offsetMin = Vector2.zero;
+        shadowVeil.rectTransform.offsetMax = Vector2.zero;
+
+        rightContaminate.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+        rightContaminate.rectTransform.anchorMax = new Vector2(1f, 1f);
+        rightContaminate.rectTransform.offsetMin = Vector2.zero;
+        rightContaminate.rectTransform.offsetMax = Vector2.zero;
 
         tearLeft.rectTransform.anchorMin = new Vector2(0.39f, 0f);
         tearLeft.rectTransform.anchorMax = new Vector2(0.5f, 1f);
@@ -412,6 +504,25 @@ public class MenuPresentation : MonoBehaviour
         crashTextRect.anchorMax = new Vector2(0.82f, 0.62f);
         crashTextRect.offsetMin = Vector2.zero;
         crashTextRect.offsetMax = Vector2.zero;
+
+        startTransitionBlackout = GetOrCreateOverlay(crashRoot, "StartTransitionBlackout", new Color(0f, 0f, 0f, 0f));
+        startTransitionNoise = GetOrCreateNoiseLayer(crashRoot, "StartTransitionNoise");
+        startTransitionNoise.color = new Color(1f, 1f, 1f, 0f);
+        startTransitionText = GetOrCreateText(crashRoot, "StartTransitionText");
+        startTransitionText.font = ResolveMenuFont(startTransitionText.font);
+        startTransitionText.fontSize = 34f;
+        startTransitionText.fontStyle = FontStyles.Bold;
+        startTransitionText.alignment = TextAlignmentOptions.Center;
+        startTransitionText.color = new Color(1f, 1f, 1f, 0f);
+        startTransitionText.text = "ENTERING LOOP 01";
+        startTransitionText.characterSpacing = 4f;
+        startTransitionText.raycastTarget = false;
+
+        RectTransform transitionTextRect = startTransitionText.rectTransform;
+        transitionTextRect.anchorMin = new Vector2(0.2f, 0.43f);
+        transitionTextRect.anchorMax = new Vector2(0.8f, 0.58f);
+        transitionTextRect.offsetMin = Vector2.zero;
+        transitionTextRect.offsetMax = Vector2.zero;
 
         crashNoiseTexture = new Texture2D(CrashNoiseWidth, CrashNoiseHeight, TextureFormat.RGBA32, false)
         {
@@ -491,36 +602,43 @@ public class MenuPresentation : MonoBehaviour
     private void AnimatePanelTearing(bool inGlitch)
     {
         float staticAlpha = inGlitch
-            ? Mathf.Lerp(0.02f, 0.16f, Mathf.PerlinNoise(Time.unscaledTime * 36f, 0.2f))
-            : Mathf.Lerp(0f, 0.025f, Mathf.PerlinNoise(Time.unscaledTime * 11f, 0.7f));
+            ? Mathf.Lerp(0.04f, 0.22f, Mathf.PerlinNoise(Time.unscaledTime * 36f, 0.2f))
+            : Mathf.Lerp(0.008f, 0.04f, Mathf.PerlinNoise(Time.unscaledTime * 11f, 0.7f));
         staticOverlay.color = new Color(1f, 1f, 1f, staticAlpha);
 
-        float blackout = inGlitch && Mathf.PerlinNoise(Time.unscaledTime * 85f, 0.9f) > 0.78f ? 0.22f : 0f;
+        float blackout = inGlitch && Mathf.PerlinNoise(Time.unscaledTime * 85f, 0.9f) > 0.72f ? 0.28f : 0f;
         blackoutOverlay.color = new Color(0f, 0f, 0f, blackout);
 
-        float leftAlpha = inGlitch ? Mathf.Lerp(0.08f, 0.3f, Mathf.PerlinNoise(1.1f, Time.unscaledTime * 41f)) : 0.015f;
-        float rightAlpha = inGlitch ? Mathf.Lerp(0.06f, 0.22f, Mathf.PerlinNoise(2.4f, Time.unscaledTime * 37f)) : 0.01f;
+        float leftAlpha = inGlitch ? Mathf.Lerp(0.16f, 0.46f, Mathf.PerlinNoise(1.1f, Time.unscaledTime * 41f)) : 0.04f;
+        float rightAlpha = inGlitch ? Mathf.Lerp(0.08f, 0.28f, Mathf.PerlinNoise(2.4f, Time.unscaledTime * 37f)) : 0.02f;
         tearLeft.color = new Color(0.95f, 0.08f, 0.08f, leftAlpha);
         tearRight.color = new Color(0.82f, 0.92f, 1f, rightAlpha);
         tearLeft.rectTransform.anchoredPosition = new Vector2(inGlitch ? Mathf.Sin(Time.unscaledTime * 51f) * 20f : 0f, 0f);
         tearRight.rectTransform.anchoredPosition = new Vector2(inGlitch ? Mathf.Cos(Time.unscaledTime * 47f) * -18f : 0f, 0f);
 
+        float pulse = inGlitch
+            ? Mathf.Lerp(0.1f, 0.26f, Mathf.PerlinNoise(0.3f, Time.unscaledTime * 18f))
+            : Mathf.Lerp(0.02f, 0.08f, Mathf.PerlinNoise(0.8f, Time.unscaledTime * 1.9f));
+        dreadPulse.color = new Color(0.45f, 0.02f, 0.02f, pulse);
+        rightContaminate.color = new Color(0.15f, 0.01f, 0.01f, inGlitch ? 0.1f : 0.04f);
+        shadowVeil.color = new Color(0f, 0f, 0f, inGlitch ? 0.28f : 0.2f);
+
         for (int i = 0; i < scanlines.Length; i++)
         {
             float lineNoise = Mathf.PerlinNoise(i * 0.31f, Time.unscaledTime * (inGlitch ? 44f : 8f));
-            scanlines[i].color = new Color(1f, 1f, 1f, inGlitch ? lineNoise * 0.08f : lineNoise * 0.01f);
+            scanlines[i].color = new Color(1f, 1f, 1f, inGlitch ? lineNoise * 0.12f : lineNoise * 0.018f);
             RectTransform lineRect = scanlines[i].rectTransform;
             lineRect.anchoredPosition = new Vector2(inGlitch ? Mathf.Sin(Time.unscaledTime * (35f + i)) * 12f : 0f, 0f);
         }
 
         if (leftRoot != null)
         {
-            leftRoot.anchoredPosition = new Vector2(inGlitch ? Mathf.Sin(Time.unscaledTime * 33f) * 3f : 0f, 0f);
+            leftRoot.anchoredPosition = new Vector2(inGlitch ? Mathf.Sin(Time.unscaledTime * 33f) * 4.5f : Mathf.Sin(Time.unscaledTime * 2.4f) * 0.35f, 0f);
         }
 
         if (rightRoot != null)
         {
-            rightRoot.anchoredPosition = new Vector2(inGlitch ? Mathf.Cos(Time.unscaledTime * 29f) * -2.6f : 0f, 0f);
+            rightRoot.anchoredPosition = new Vector2(inGlitch ? Mathf.Cos(Time.unscaledTime * 29f) * -3.2f : Mathf.Cos(Time.unscaledTime * 1.8f) * -0.22f, 0f);
         }
     }
 
@@ -571,9 +689,9 @@ public class MenuPresentation : MonoBehaviour
         for (int i = 0; i < leftFlashSquares.Length; i++)
         {
             float noise = Mathf.PerlinNoise(i * 0.93f, Time.unscaledTime * (inGlitch ? 26f : 8f));
-            float threshold = inGlitch ? 0.62f : 0.9f;
+            float threshold = inGlitch ? 0.54f : 0.82f;
             float alpha = noise > threshold
-                ? Mathf.Lerp(inGlitch ? 0.12f : 0.05f, inGlitch ? 0.38f : 0.14f, noise)
+                ? Mathf.Lerp(inGlitch ? 0.22f : 0.08f, inGlitch ? 0.56f : 0.22f, noise)
                 : 0f;
 
             leftFlashSquares[i].color = new Color(0f, 0f, 0f, alpha);
@@ -583,8 +701,8 @@ public class MenuPresentation : MonoBehaviour
     private void ConfigureFakeButtons(RectTransform root)
     {
         RectTransform fakeGroup = GetOrCreateRect(root, "FakeButtonGroup");
-        fakeGroup.anchorMin = new Vector2(0.14f, 0.1f);
-        fakeGroup.anchorMax = new Vector2(0.84f, 0.28f);
+        fakeGroup.anchorMin = new Vector2(0.12f, 0.12f);
+        fakeGroup.anchorMax = new Vector2(0.78f, 0.38f);
         fakeGroup.offsetMin = Vector2.zero;
         fakeGroup.offsetMax = Vector2.zero;
         fakeGroup.SetAsLastSibling();
@@ -595,12 +713,21 @@ public class MenuPresentation : MonoBehaviour
             layout = fakeGroup.gameObject.AddComponent<VerticalLayoutGroup>();
         }
 
-        layout.childAlignment = TextAnchor.MiddleLeft;
-        layout.spacing = 14f;
-        layout.childControlWidth = false;
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.spacing = 20f;
+        layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
+
+        ContentSizeFitter fitter = fakeGroup.GetComponent<ContentSizeFitter>();
+        if (fitter == null)
+        {
+            fitter = fakeGroup.gameObject.AddComponent<ContentSizeFitter>();
+        }
+
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         CreateFakeButton(fakeGroup, "FakeStartButton", "START");
         CreateFakeButton(fakeGroup, "FakeRelaunchButton", "RELAUNCH");
@@ -611,11 +738,23 @@ public class MenuPresentation : MonoBehaviour
     {
         RectTransform rect = GetOrCreateRect(parent, name);
         rect.SetParent(parent, false);
-        rect.sizeDelta = new Vector2(320f, 60f);
+        rect.sizeDelta = new Vector2(440f, 82f);
+
+        LayoutElement layoutElement = rect.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+        }
+
+        layoutElement.minWidth = 440f;
+        layoutElement.preferredWidth = 440f;
+        layoutElement.minHeight = 82f;
+        layoutElement.preferredHeight = 82f;
 
         Image image = GetOrAddImage(rect.gameObject);
-        image.color = new Color(0.34f, 0.31f, 0.24f, 0.72f);
+        image.color = new Color(0.98f, 0.88f, 0.62f, 0.98f);
         image.raycastTarget = true;
+        image.type = Image.Type.Simple;
 
         Button button = rect.GetComponent<Button>();
         if (button == null)
@@ -624,10 +763,10 @@ public class MenuPresentation : MonoBehaviour
         }
 
         ColorBlock colors = button.colors;
-        colors.normalColor = new Color(0.34f, 0.31f, 0.24f, 0.72f);
-        colors.highlightedColor = new Color(0.48f, 0.43f, 0.31f, 0.82f);
+        colors.normalColor = new Color(0.98f, 0.88f, 0.62f, 0.98f);
+        colors.highlightedColor = new Color(1f, 0.94f, 0.74f, 1f);
         colors.selectedColor = colors.highlightedColor;
-        colors.pressedColor = new Color(0.24f, 0.2f, 0.14f, 0.92f);
+        colors.pressedColor = new Color(0.8f, 0.66f, 0.38f, 1f);
         colors.fadeDuration = 0.08f;
         button.colors = colors;
         button.onClick.RemoveAllListeners();
@@ -636,24 +775,87 @@ public class MenuPresentation : MonoBehaviour
         TMP_Text labelText = EnsureButtonLabel(rect);
         labelText.font = ResolveMenuFont(labelText.font);
         labelText.text = label;
-        labelText.fontSize = 22f;
+        labelText.fontSize = 24f;
         labelText.fontStyle = FontStyles.Bold;
         labelText.alignment = TextAlignmentOptions.Center;
-        labelText.color = new Color(0.98f, 0.96f, 0.9f, 0.88f);
+        labelText.color = new Color(0.26f, 0.16f, 0.04f, 1f);
         labelText.raycastTarget = false;
+        labelText.textWrappingMode = TextWrappingModes.NoWrap;
+        labelText.overflowMode = TextOverflowModes.Overflow;
+
+        MenuButtonAnimator animator = rect.GetComponent<MenuButtonAnimator>();
+        if (animator == null)
+        {
+            animator = rect.gameObject.AddComponent<MenuButtonAnimator>();
+        }
+
+        animator.Configure(colors.normalColor, colors.highlightedColor);
     }
 
     private void BeginFakeCrash()
     {
-        if (!crashRunning)
+        if (!crashRunning && !startTransitionRunning)
         {
+            LoopfallAudio.EnsureExists().TriggerCrashSting();
             StartCoroutine(FakeCrashRoutine());
         }
+    }
+
+    public IEnumerator PlayLoopfallStartTransition()
+    {
+        if (startTransitionRunning)
+        {
+            yield break;
+        }
+
+        startTransitionRunning = true;
+        SetAllButtonsInteractable(false);
+
+        LoopfallAudio audio = LoopfallAudio.EnsureExists();
+        float duration = 1.45f;
+        float timer = 0f;
+        audio.BeginLoopfallStartTransition(duration);
+
+        while (timer < duration)
+        {
+            timer += Time.unscaledDeltaTime;
+            float normalized = Mathf.Clamp01(timer / duration);
+            float eased = normalized * normalized * (3f - 2f * normalized);
+            float pulse = Mathf.PingPong(timer * 7.5f, 1f);
+
+            startTransitionBlackout.color = new Color(0f, 0f, 0f, Mathf.Lerp(0.08f, 0.96f, eased));
+            startTransitionNoise.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.02f, 0.24f, pulse * eased));
+            startTransitionText.alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((normalized - 0.12f) / 0.28f));
+            startTransitionText.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(timer * 30f) * (1f + pulse * 9f), Mathf.Cos(timer * 21f) * 1.5f);
+
+            leftRoot.anchoredPosition = new Vector2(-Mathf.Lerp(0f, 26f, eased), 0f);
+            rightRoot.anchoredPosition = new Vector2(Mathf.Lerp(0f, 18f, eased), 0f);
+            dividerRoot.localScale = Vector3.Lerp(Vector3.one, new Vector3(1.8f, 1f, 1f), eased);
+            dreadPulse.color = new Color(0.55f, 0.02f, 0.02f, Mathf.Lerp(0.08f, 0.38f, eased));
+            shadowVeil.color = new Color(0f, 0f, 0f, Mathf.Lerp(0.22f, 0.55f, eased));
+            staticOverlay.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.02f, 0.12f, pulse * eased));
+            blackoutOverlay.color = new Color(0f, 0f, 0f, Mathf.Lerp(0f, 0.24f, eased));
+
+            if (normalized > 0.38f && UnityEngine.Random.value > 0.86f)
+            {
+                audio.PlayUi(LoopfallCue.MenuGlitchTick, UnityEngine.Random.Range(0.05f, 0.11f), 0.02f);
+            }
+
+            yield return null;
+        }
+
+        audio.PlayUi(LoopfallCue.MenuGlitchBurst, 0.12f, 0.02f);
+        startTransitionBlackout.color = new Color(0f, 0f, 0f, 1f);
+        startTransitionNoise.color = new Color(1f, 1f, 1f, 0.16f);
+        startTransitionText.alpha = 1f;
+        startTransitionText.rectTransform.anchoredPosition = Vector2.zero;
+        yield return new WaitForSecondsRealtime(0.18f);
     }
 
     private IEnumerator FakeCrashRoutine()
     {
         crashRunning = true;
+        LoopfallAudio audio = LoopfallAudio.EnsureExists();
 
         string[] crashMessages =
         {
@@ -661,37 +863,68 @@ public class MenuPresentation : MonoBehaviour
             "Unhandled exception at 0x00000000.",
             "Graphics device removed unexpectedly.",
             "Fatal memory access violation.",
+            "Display driver stopped responding.",
+            "Read from protected memory failed.",
         };
 
-        float buildup = Random.Range(0.55f, 1.2f);
-        float freeze = Random.Range(0.45f, 1.1f);
-        float blackout = Random.Range(0.2f, 0.45f);
+        float buildup = Random.Range(0.18f, 0.52f);
+        float freeze = Random.Range(0.85f, 1.85f);
+        float blackout = Random.Range(0.45f, 0.95f);
+        bool hardFlash = Random.value > 0.45f;
         crashText.text = crashMessages[Random.Range(0, crashMessages.Length)];
+        audio.BeginCrashFlicker(buildup * 0.92f);
 
         while (buildup > 0f)
         {
             buildup -= Time.unscaledDeltaTime;
-            staticOverlay.color = new Color(1f, 1f, 1f, Random.Range(0.08f, 0.25f));
-            blackoutOverlay.color = new Color(0f, 0f, 0f, Random.Range(0f, 0.18f));
-            tearLeft.color = new Color(1f, 0.08f, 0.08f, Random.Range(0.1f, 0.35f));
-            tearRight.color = new Color(0.82f, 0.92f, 1f, Random.Range(0.08f, 0.28f));
+            staticOverlay.color = new Color(1f, 1f, 1f, Random.Range(0.22f, 0.58f));
+            blackoutOverlay.color = new Color(0f, 0f, 0f, Random.Range(0.08f, 0.38f));
+            tearLeft.color = new Color(1f, 0.08f, 0.08f, Random.Range(0.24f, 0.68f));
+            tearRight.color = new Color(0.82f, 0.92f, 1f, Random.Range(0.18f, 0.5f));
+            ApplyCrashShake(10f, 9f, 18f, 10f, 1f);
+
+            if (hardFlash && Random.value > 0.76f)
+            {
+                crashBlackout.color = new Color(1f, 1f, 1f, Random.Range(0.08f, 0.22f));
+            }
             yield return null;
         }
 
-        crashBlackout.color = new Color(0f, 0f, 0f, 0.9f);
-        crashNoise.color = new Color(1f, 1f, 1f, 0.4f);
+        audio.StopActiveMusicAbruptly();
+        crashBlackout.color = new Color(0f, 0f, 0f, 0.96f);
+        crashNoise.color = new Color(1f, 1f, 1f, 0.72f);
         crashText.color = new Color(1f, 1f, 1f, 0.95f);
 
         while (freeze > 0f)
         {
             freeze -= Time.unscaledDeltaTime;
-            crashBlackout.color = new Color(0f, 0f, 0f, Random.Range(0.82f, 0.98f));
-            crashNoise.color = new Color(1f, 1f, 1f, Random.Range(0.22f, 0.52f));
-            crashText.alpha = Random.Range(0.65f, 1f);
+            crashBlackout.color = new Color(0f, 0f, 0f, Random.Range(0.9f, 1f));
+            crashNoise.color = new Color(1f, 1f, 1f, Random.Range(0.5f, 0.9f));
+            crashText.alpha = Random.Range(0.35f, 1f);
+            staticOverlay.color = new Color(1f, 1f, 1f, Random.Range(0.24f, 0.56f));
+            blackoutOverlay.color = new Color(0f, 0f, 0f, Random.Range(0.3f, 0.62f));
+            tearLeft.color = new Color(1f, 0.08f, 0.08f, Random.Range(0.12f, 0.4f));
+            tearRight.color = new Color(0.82f, 0.92f, 1f, Random.Range(0.1f, 0.34f));
+            ApplyCrashShake(12f, 11f, 12f, 7f, 1.15f);
             yield return null;
         }
 
-        yield return new WaitForSecondsRealtime(blackout);
+        audio.PlayUi(LoopfallCue.MenuGlitchBurst, 0.09f, 0.03f);
+        crashNoise.color = new Color(1f, 1f, 1f, 0.42f);
+        crashBlackout.color = new Color(0f, 0f, 0f, 0.92f);
+        yield return new WaitForSecondsRealtime(0.045f);
+
+        crashBlackout.color = new Color(0f, 0f, 0f, 1f);
+        crashNoise.color = new Color(1f, 1f, 1f, 0.96f);
+        crashText.alpha = 1f;
+        crashText.rectTransform.anchoredPosition = Vector2.zero;
+        float blackoutTimer = blackout;
+        while (blackoutTimer > 0f)
+        {
+            blackoutTimer -= Time.unscaledDeltaTime;
+            ApplyCrashShake(13f, 12f, 10f, 6f, 1.2f);
+            yield return null;
+        }
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -730,13 +963,25 @@ public class MenuPresentation : MonoBehaviour
         }
 
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(320f, 64f);
+        rect.sizeDelta = new Vector2(340f, 76f);
+
+        LayoutElement layoutElement = buttonObject.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = buttonObject.AddComponent<LayoutElement>();
+        }
+
+        layoutElement.minWidth = 340f;
+        layoutElement.preferredWidth = 340f;
+        layoutElement.minHeight = 76f;
+        layoutElement.preferredHeight = 76f;
 
         Image image = buttonObject.GetComponent<Image>();
         if (image != null)
         {
             image.color = normalColor;
             image.raycastTarget = true;
+            image.type = Image.Type.Simple;
         }
 
         Button button = buttonObject.GetComponent<Button>();
@@ -756,7 +1001,7 @@ public class MenuPresentation : MonoBehaviour
         TMP_Text buttonLabel = EnsureButtonLabel(rect);
         buttonLabel.font = ResolveMenuFont(buttonLabel.font);
         buttonLabel.text = label;
-        buttonLabel.fontSize = 22f;
+        buttonLabel.fontSize = 21f;
         buttonLabel.fontStyle = FontStyles.Bold;
         buttonLabel.alignment = TextAlignmentOptions.Center;
         buttonLabel.color = new Color(0.95f, 0.97f, 1f, 1f);
@@ -884,17 +1129,34 @@ public class MenuPresentation : MonoBehaviour
 
             if (Random.value < 0.24f)
             {
-                chars[i] = RandomGlyphs()[Random.Range(0, 4)];
+                string glyphPair = RandomGlyphs();
+                chars[i] = glyphPair[Random.Range(0, glyphPair.Length)];
             }
         }
 
         return new string(chars);
     }
 
+    private void ApplyCrashShake(float leftMagnitude, float rightMagnitude, float textX, float textY, float dividerScaleBoost)
+    {
+        leftRoot.anchoredPosition = new Vector2(Random.Range(-leftMagnitude, leftMagnitude), Random.Range(-3f, 3f));
+        rightRoot.anchoredPosition = new Vector2(Random.Range(-rightMagnitude, rightMagnitude), Random.Range(-3f, 3f));
+        crashText.rectTransform.anchoredPosition = new Vector2(Random.Range(-textX, textX), Random.Range(-textY, textY));
+        dividerRoot.localScale = new Vector3(Random.Range(1f, dividerScaleBoost), 1f, 1f);
+    }
+
     private string RandomGlyphs()
     {
         const string glyphs = "#/:;[]|";
         return $"{glyphs[Random.Range(0, glyphs.Length)]}{glyphs[Random.Range(0, glyphs.Length)]}";
+    }
+
+    private void SetAllButtonsInteractable(bool interactable)
+    {
+        foreach (Button button in FindObjectsByType<Button>(FindObjectsSortMode.None))
+        {
+            button.interactable = interactable;
+        }
     }
 
     private void InitializeDividerNoiseTexture()
