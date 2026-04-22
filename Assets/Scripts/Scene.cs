@@ -23,6 +23,7 @@ public class Scene : MonoBehaviour
 
     private void Awake()
     {
+        PurgeLegacySceneParticles();
         runtimeRoot = FindOrCreate(RuntimeRootName).transform;
         ResetRuntimeRoot();
         mainCamera = ConfigureCamera();
@@ -239,6 +240,19 @@ public class Scene : MonoBehaviour
         runtimeRoot.localScale = Vector3.one;
     }
 
+    private void PurgeLegacySceneParticles()
+    {
+        foreach (ParticleSystem particle in FindObjectsByType<ParticleSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (particle == null || particle.gameObject.name == "WaterDeathBurst")
+            {
+                continue;
+            }
+
+            Destroy(particle.gameObject);
+        }
+    }
+
     private void EnsurePlayerVisual(GameObject playerObject)
     {
         MeshRenderer renderer = playerObject.GetComponent<MeshRenderer>();
@@ -287,7 +301,7 @@ public class Scene : MonoBehaviour
         CreateMoundGarden(mapRoot, stableGround, slickGround);
         CreateMazeGarden(mapRoot, stableGround);
         CreatePoolBroadwayRelic(mapRoot, stableGround);
-        CreateDecorativeFragmentsAndShrine(mapRoot);
+        CreateMemoryFragmentsAndOldVersionReference(mapRoot);
     }
 
     private void CreateIslandBase(Transform parent, PhysicsMaterial groundMaterial)
@@ -479,7 +493,7 @@ public class Scene : MonoBehaviour
         }
     }
 
-    private void CreateDecorativeFragmentsAndShrine(Transform parent)
+    private void CreateMemoryFragmentsAndOldVersionReference(Transform parent)
     {
         CreateMemoryFragment(parent, new Vector3(-11.4f, 0.9f, -8.4f), FragmentType.Stabilizing);
         CreatePondFragmentPlatform(parent);
@@ -488,9 +502,9 @@ public class Scene : MonoBehaviour
         CreateMemoryFragment(parent, new Vector3(14.6f, 1.05f, -13.3f), FragmentType.Corrupted);
         CreateMemoryFragment(parent, new Vector3(10.2f, 0.9f, 13.8f), FragmentType.Stabilizing);
 
-        GameObject shrinePlinth = CreateCylinder(parent, "ShrinePlinth", new Vector3(0f, 0.56f, 6.9f), new Vector3(2.3f, 0.22f, 2.3f), CreateGroundMaterial(), new Color(0.49f, 0.5f, 0.56f));
-        TrySetEmission(shrinePlinth.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.07f));
-        CreateShrine(parent, new Vector3(0f, 0.96f, 6.9f));
+        GameObject memorialPlinth = CreateCylinder(parent, "OldVersionMemorialPlinth", new Vector3(0f, 0.56f, 6.9f), new Vector3(2.3f, 0.22f, 2.3f), CreateGroundMaterial(), new Color(0.49f, 0.5f, 0.56f));
+        TrySetEmission(memorialPlinth.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.07f));
+        CreateOldVersionMemorial(parent, new Vector3(0f, 0.96f, 6.9f));
     }
 
     private void CreatePoolBroadwayRelic(Transform parent, PhysicsMaterial groundMaterial)
@@ -507,27 +521,24 @@ public class Scene : MonoBehaviour
         flinger.Configure(poolBroadway.transform.localPosition, poolBroadway.transform.localRotation);
     }
 
-    private void CreateShrine(Transform parent, Vector3 position)
+    private void CreateOldVersionMemorial(Transform parent, Vector3 position)
     {
-        GameObject shrineRoot = new("Shrine");
-        shrineRoot.transform.SetParent(parent, false);
-        shrineRoot.transform.localPosition = ScaleWorld(position);
+        GameObject memorialRoot = new("OldVersionMemorial");
+        memorialRoot.transform.SetParent(parent, false);
+        memorialRoot.transform.localPosition = ScaleWorld(position);
 
-        GameObject baseObject = CreateCylinder(shrineRoot.transform, "ShrineBase", Vector3.zero, new Vector3(1.9f, 0.18f, 1.9f), CreateGroundMaterial(), new Color(0.42f, 0.42f, 0.48f));
-        baseObject.transform.localPosition = Vector3.zero;
+        GameObject baseObject = CreateCylinder(memorialRoot.transform, "LegacyPlinth", Vector3.zero, new Vector3(1.9f, 0.18f, 1.9f), CreateGroundMaterial(), new Color(0.42f, 0.42f, 0.48f));
+        TrySetEmission(baseObject.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.07f));
 
-        GameObject marker = CreateSphere(shrineRoot.transform, "ShrineMarker", new Vector3(0f, 0.74f, 0f), new Vector3(0.75f, 0.75f, 0.75f), CreateGroundMaterial(), new Color(0.7f, 0.86f, 0.95f));
-        TrySetEmission(marker.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.08f, 0.18f, 0.24f));
-        AttachLoopEmitter(marker, LoopfallCue.ShrineLoop, 0.12f, 1f, 1f, 2f, 18f);
+        GameObject oldTile = CreateBox(memorialRoot.transform, "LegacyPoolBroadwayTile", new Vector3(0f, 0.24f, 0f), new Vector3(0.82f, 0.12f, 0.82f), Quaternion.Euler(0f, 27f, 0f), CreateGroundMaterial(), new Color(0.48f, 0.34f, 0.26f));
+        MakeVisualOnly(oldTile);
 
-        GameObject triggerObject = new("InteractionTrigger");
-        triggerObject.transform.SetParent(shrineRoot.transform, false);
-        SphereCollider trigger = triggerObject.AddComponent<SphereCollider>();
-        trigger.isTrigger = true;
-        trigger.radius = ScaleWorld(2.4f);
+        GameObject oldPlayerEcho = CreateSphere(memorialRoot.transform, "LegacyBallEcho", new Vector3(-0.52f, 0.44f, 0.22f), new Vector3(0.28f, 0.28f, 0.28f), CreateGroundMaterial(), new Color(0.74f, 0.82f, 0.92f));
+        MakeVisualOnly(oldPlayerEcho);
 
-        Shrine shrine = triggerObject.AddComponent<Shrine>();
-        shrine.Configure(FragmentType.Stabilizing);
+        GameObject oldMemoryCube = CreateBox(memorialRoot.transform, "LegacyMemoryCube", new Vector3(0.42f, 0.62f, -0.14f), new Vector3(0.34f, 0.34f, 0.34f), Quaternion.Euler(35f, 35f, 0f), CreateGroundMaterial(), new Color(0.48f, 0.9f, 0.82f));
+        MakeVisualOnly(oldMemoryCube);
+        TrySetEmission(oldMemoryCube.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.08f, 0.18f, 0.16f));
     }
 
     private void CreateMemoryFragment(Transform parent, Vector3 position, FragmentType fragmentType)
@@ -643,6 +654,98 @@ public class Scene : MonoBehaviour
 
         decoration.GetComponent<MeshRenderer>().sharedMaterial = CreateColorMaterial($"{name}Material", color);
         return decoration;
+    }
+
+    private GameObject CreateFlameMeshAtWorld(Transform parent, string name, Vector3 worldBasePosition, Vector3 scale, Color color, Color emission)
+    {
+        GameObject flameRoot = new(name);
+        flameRoot.transform.SetParent(parent, false);
+        flameRoot.transform.position = worldBasePosition;
+        flameRoot.transform.localRotation = Quaternion.identity;
+        flameRoot.transform.localScale = ScaleDecorative(scale);
+
+        CreateFlameBlob(flameRoot.transform, "EmberBase", new Vector3(0f, 0.02f, 0f), new Vector3(0.72f, 0.18f, 0.72f), new Color(1f, 0.34f, 0.08f), new Color(0.2f, 0.04f, 0.01f));
+        CreateFlameFin(flameRoot.transform, "OuterRedLick", new Vector3(-0.08f, 0f, 0.02f), -18f, new Vector3(0.66f, 0.74f, 0.66f), new Color(0.98f, 0.28f, 0.08f), new Color(0.18f, 0.04f, 0.01f));
+        CreateFlameFin(flameRoot.transform, "OuterOrangeLick", new Vector3(0.08f, 0.01f, -0.03f), 72f, new Vector3(0.76f, 0.82f, 0.76f), color, emission);
+        CreateFlameFin(flameRoot.transform, "BackOrangeLick", new Vector3(0f, -0.01f, 0.06f), 152f, new Vector3(0.58f, 0.66f, 0.58f), new Color(1f, 0.58f, 0.16f), emission);
+        CreateFlameFin(flameRoot.transform, "InnerYellowLick", new Vector3(0.02f, 0.08f, -0.02f), 36f, new Vector3(0.34f, 0.52f, 0.34f), new Color(1f, 0.94f, 0.48f), new Color(0.3f, 0.18f, 0.03f));
+        return flameRoot;
+    }
+
+    private void CreateFlameFin(Transform parent, string name, Vector3 localPosition, float yRotation, Vector3 scale, Color color, Color emission)
+    {
+        GameObject fin = new(name);
+        fin.transform.SetParent(parent, false);
+        fin.transform.localPosition = localPosition;
+        fin.transform.localRotation = Quaternion.Euler(0f, yRotation, 0f);
+        fin.transform.localScale = scale;
+
+        MeshFilter meshFilter = fin.AddComponent<MeshFilter>();
+        meshFilter.sharedMesh = CreateTeardropFlameMesh($"{parent.name}_{name}");
+
+        Material material = CreateColorMaterial($"{parent.name}_{name}Material", color);
+        TrySetEmission(material, emission);
+        SetDoubleSided(material);
+        fin.AddComponent<MeshRenderer>().sharedMaterial = material;
+    }
+
+    private void CreateFlameBlob(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Color color, Color emission)
+    {
+        GameObject blob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        blob.name = name;
+        blob.transform.SetParent(parent, false);
+        blob.transform.localPosition = localPosition;
+        blob.transform.localRotation = Quaternion.identity;
+        blob.transform.localScale = localScale;
+        MakeVisualOnly(blob);
+
+        Material material = CreateColorMaterial($"{parent.name}_{name}Material", color);
+        TrySetEmission(material, emission);
+        blob.GetComponent<MeshRenderer>().sharedMaterial = material;
+    }
+
+    private Mesh CreateTeardropFlameMesh(string name)
+    {
+        Vector2[] outline =
+        {
+            new(0f, -0.02f),
+            new(-0.18f, 0.04f),
+            new(-0.38f, 0.22f),
+            new(-0.42f, 0.46f),
+            new(-0.22f, 0.68f),
+            new(-0.08f, 0.84f),
+            new(0.05f, 1.02f),
+            new(0.18f, 0.82f),
+            new(0.34f, 0.56f),
+            new(0.38f, 0.3f),
+            new(0.24f, 0.1f),
+        };
+
+        Vector3[] vertices = new Vector3[outline.Length + 1];
+        int[] triangles = new int[outline.Length * 3];
+        vertices[0] = new Vector3(0f, 0.44f, 0f);
+
+        for (int i = 0; i < outline.Length; i++)
+        {
+            vertices[i + 1] = new Vector3(outline[i].x, outline[i].y, 0f);
+
+            int next = (i + 1) % outline.Length;
+            int tri = i * 3;
+            triangles[tri] = 0;
+            triangles[tri + 1] = i + 1;
+            triangles[tri + 2] = next + 1;
+        }
+
+        Mesh mesh = new()
+        {
+            name = $"{name}Mesh",
+            vertices = vertices,
+            triangles = triangles,
+        };
+
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
     }
 
     private void CreateOrganicPatch(Transform parent, string name, Vector3 position, Vector3 scale, Quaternion rotation, PhysicsMaterial physicsMaterial, Color color)
@@ -784,16 +887,12 @@ public class Scene : MonoBehaviour
 
         Vector3 postTop = post.transform.TransformPoint(Vector3.up);
         Vector3 capScale = new(0.22f, 0.08f, 0.22f);
-        Vector3 glowScale = new(0.14f, 0.24f, 0.14f);
         float capHalfHeight = ScaleDecorative(capScale).y * 0.5f;
-        float glowHalfHeight = ScaleDecorative(glowScale).y * 0.5f;
 
         GameObject cap = CreateDecorativeSphereAtWorld(parent, $"FaintLanternCap_{position.x:F1}_{position.z:F1}", postTop + Vector3.up * capHalfHeight, capScale, CreateGroundMaterial(), new Color(0.86f, 0.74f, 0.52f));
-        GameObject glow = CreateDecorativeSphereAtWorld(parent, $"FaintLanternGlow_{position.x:F1}_{position.z:F1}", postTop + Vector3.up * (capHalfHeight * 2f + glowHalfHeight * 0.92f), glowScale, CreateGroundMaterial(), new Color(0.96f, 0.82f, 0.46f));
+        CreateFlameMeshAtWorld(parent, $"FaintLanternFlame_{position.x:F1}_{position.z:F1}", postTop + Vector3.up * (capHalfHeight * 2f), new Vector3(0.34f, 0.62f, 0.34f), new Color(1f, 0.78f, 0.32f), new Color(0.22f, 0.1f, 0.02f));
 
         MakeVisualOnly(cap);
-        MakeVisualOnly(glow);
-        TrySetEmission(glow.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.16f, 0.09f, 0.02f));
     }
 
     private void CreatePondEntranceLanterns(Transform parent)
@@ -1136,6 +1235,16 @@ public class Scene : MonoBehaviour
             material.EnableKeyword("_EMISSION");
             material.SetColor("_EmissionColor", emission);
         }
+    }
+
+    private void SetDoubleSided(Material material)
+    {
+        if (material == null || !material.HasProperty("_Cull"))
+        {
+            return;
+        }
+
+        material.SetFloat("_Cull", 0f);
     }
 
     private void AttachLoopEmitter(GameObject target, LoopfallCue cue, float volume, float pitch, float spatialBlend, float minDistance, float maxDistance)
