@@ -10,11 +10,13 @@ public class Scene : MonoBehaviour
     private const float PondLilyPadHalfHeight = 0.008f;
     private const float PondLilyPadSurfaceOffset = 0.006f;
     private const float PondWaterHazardTopY = PondWaterCenterY + PondWaterHalfHeight + 0.002f;
-    private const float FountainWaterHazardTopY = 0.547f;
+    private const float FountainWaterHazardTopY = 0.658f;
     private static Vector3 PlayerSpawnPosition => new(0f, ScaleWorldY(0.31f) + Config.SoccerBallRadius + 0.06f, ScaleWorld(-16f));
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
+    private static Vector3 MazeFragmentPedestalCenter => new(14.55f, 0.74f, -14.2f);
+    private static Vector3 MazeFragmentPosition => new(MazeFragmentPedestalCenter.x, 1.19f, MazeFragmentPedestalCenter.z);
 
     private Transform runtimeRoot = null!;
     private Camera mainCamera = null!;
@@ -326,7 +328,7 @@ public class Scene : MonoBehaviour
         CreateCylinder(parent, "PlazaInnerRing", new Vector3(0f, 0.27f, 0f), new Vector3(7.25f, 0.07f, 7.25f), groundMaterial, new Color(0.67f, 0.69f, 0.72f));
 
         GameObject fountainBasinFloor = CreateCylinder(parent, "FountainBasinFloor", new Vector3(0f, 0.28f, 0f), new Vector3(5.15f, 0.12f, 5.15f), groundMaterial, fountainStone);
-        GameObject fountainWater = CreateCylinder(parent, "FountainWater", new Vector3(0f, 0.5f, 0f), new Vector3(4.72f, 0.045f, 4.72f), groundMaterial, fountainWaterColor);
+        GameObject fountainWater = CreateCylinder(parent, "FountainWater", new Vector3(0f, 0.405f, 0f), new Vector3(5.58f, 0.255f, 5.58f), groundMaterial, fountainWaterColor);
         GameObject fountainPedestal = CreateCylinder(parent, "FountainPedestal", new Vector3(0f, 0.92f, 0f), new Vector3(0.84f, 0.54f, 0.84f), groundMaterial, fountainAccent);
         GameObject fountainSpout = CreateCylinder(parent, "FountainSpout", new Vector3(0f, 1.62f, 0f), new Vector3(0.12f, 0.2f, 0.12f), groundMaterial, fountainAccent);
         GameObject fountainCore = CreateSphere(parent, "FountainCore", new Vector3(0f, 2.06f, 0f), new Vector3(0.48f, 0.48f, 0.48f), groundMaterial, new Color(0.72f, 0.9f, 0.95f));
@@ -334,7 +336,7 @@ public class Scene : MonoBehaviour
             parent,
             "FountainWaterHazard",
             new Vector3(0f, 0f, 0f),
-            4.72f * 0.5f,
+            5.58f * 0.5f,
             FountainWaterHazardTopY,
             "Touched the fountain water");
 
@@ -360,9 +362,6 @@ public class Scene : MonoBehaviour
         fountainEffects.transform.SetParent(parent, false);
         FountainController fountainController = fountainEffects.AddComponent<FountainController>();
         fountainController.Configure(
-            fountainWater.transform,
-            fountainWater.GetComponent<Renderer>(),
-            fountainSpout.transform,
             fountainCore.transform,
             fountainCore.GetComponent<Renderer>());
 
@@ -467,30 +466,68 @@ public class Scene : MonoBehaviour
 
     private void CreateMazeGarden(Transform parent, PhysicsMaterial groundMaterial)
     {
-        CreatePlatform(parent, "MazeBase", new Vector3(12.8f, 0.18f, -13.5f), new Vector3(12.2f, 0.6f, 11.8f), Quaternion.Euler(0f, -8f, 0f), groundMaterial, new Color(0.83f, 0.8f, 0.74f));
-        CreatePlatform(parent, "MazeBorderNorth", new Vector3(12.8f, 1f, -8f), new Vector3(12.6f, 1.3f, 0.45f), Quaternion.Euler(0f, -8f, 0f), groundMaterial, new Color(0.28f, 0.5f, 0.22f));
-        CreatePlatform(parent, "MazeBorderSouth", new Vector3(12.8f, 1f, -19f), new Vector3(12.6f, 1.3f, 0.45f), Quaternion.Euler(0f, -8f, 0f), groundMaterial, new Color(0.28f, 0.5f, 0.22f));
-        CreatePlatform(parent, "MazeBorderWest", new Vector3(7f, 1f, -13.5f), new Vector3(0.45f, 1.3f, 11.6f), Quaternion.Euler(0f, -8f, 0f), groundMaterial, new Color(0.28f, 0.5f, 0.22f));
-        CreatePlatform(parent, "MazeBorderEast", new Vector3(18.6f, 1f, -13.5f), new Vector3(0.45f, 1.3f, 11.6f), Quaternion.Euler(0f, -8f, 0f), groundMaterial, new Color(0.28f, 0.5f, 0.22f));
-
+        const float mazeRotation = -8f;
+        Quaternion mazeRotationQuaternion = Quaternion.Euler(0f, mazeRotation, 0f);
         Vector3 mazeCenter = new(12.8f, 0.78f, -13.5f);
-        CreateMazeWall(parent, "MazeWall_0", mazeCenter + new Vector3(0f, 0f, 4f), new Vector3(8.4f, 1.15f, 0.38f), -8f, groundMaterial);
-        CreateMazeWall(parent, "MazeWall_1", mazeCenter + new Vector3(-4f, 0f, 1f), new Vector3(0.38f, 1.15f, 7.2f), -8f, groundMaterial);
-        CreateMazeWall(parent, "MazeWall_2", mazeCenter + new Vector3(3.4f, 0f, 1.4f), new Vector3(0.38f, 1.15f, 7.4f), -8f, groundMaterial);
-        CreateMazeWall(parent, "MazeWall_3", mazeCenter + new Vector3(0.1f, 0f, -0.4f), new Vector3(7.2f, 1.15f, 0.38f), -8f, groundMaterial);
-        CreateMazeWall(parent, "MazeWall_4", mazeCenter + new Vector3(-2f, 0f, -4.2f), new Vector3(6.2f, 1.15f, 0.38f), -8f, groundMaterial);
-        CreateMazeWall(parent, "MazeWall_5", mazeCenter + new Vector3(5f, 0f, -3.2f), new Vector3(0.38f, 1.15f, 4.3f), -8f, groundMaterial);
-        CreateMazeWall(parent, "MazeWall_6", mazeCenter + new Vector3(-5.2f, 0f, -1.8f), new Vector3(0.38f, 1.15f, 3.4f), -8f, groundMaterial);
+        const float outerWallHeight = 3.05f;
+        const float innerWallHeight = 2.75f;
+        const float outerWallThickness = 0.52f;
+        const float innerWallThickness = 0.42f;
+        Color mazeStone = new(0.81f, 0.79f, 0.73f);
+        Color hedgeTint = new(0.28f, 0.49f, 0.22f);
+        Quaternion fragmentRotation = Quaternion.Euler(35f, 35f, 0f);
 
-        for (int row = 0; row < 5; row++)
-        {
-            for (int col = 0; col < 8; col++)
-            {
-                Color flowerColor = Color.HSVToRGB((row * 0.16f + col * 0.05f) % 1f, 0.6f, 0.9f);
-                Vector3 flowerPosition = new Vector3(8.2f + col * 1.3f, 0.52f, -9.4f - row * 2.2f);
-                CreateFlowerMarker(parent, flowerPosition, flowerColor);
-            }
-        }
+        CreateOrganicPatch(parent, "MazeLawn", new Vector3(12.7f, 0.03f, -13.4f), new Vector3(14.2f, 0.16f, 13.9f), mazeRotationQuaternion, groundMaterial, new Color(0.47f, 0.66f, 0.38f));
+        CreatePath(parent, "MazeApproachPath", new Vector3(12.8f, 0.07f, -8.55f), new Vector3(3.7f, 0.14f, 3.4f), mazeRotationQuaternion, groundMaterial, new Color(0.86f, 0.84f, 0.78f));
+        CreatePlatform(parent, "MazeBase", new Vector3(12.8f, 0.18f, -13.5f), new Vector3(12.4f, 0.62f, 11.9f), mazeRotationQuaternion, groundMaterial, mazeStone);
+
+        CreateMazeWall(parent, "MazeBorderNorthWest", mazeCenter + new Vector3(-3.35f, 0f, 5.35f), new Vector3(4.75f, outerWallHeight, outerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeBorderNorthEast", mazeCenter + new Vector3(3.35f, 0f, 5.35f), new Vector3(4.75f, outerWallHeight, outerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeBorderSouth", mazeCenter + new Vector3(0f, 0f, -5.45f), new Vector3(12.1f, outerWallHeight, outerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeBorderWest", mazeCenter + new Vector3(-5.8f, 0f, -0.02f), new Vector3(outerWallThickness, outerWallHeight, 11.15f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeBorderEast", mazeCenter + new Vector3(5.8f, 0f, -0.02f), new Vector3(outerWallThickness, outerWallHeight, 11.15f), mazeRotation, groundMaterial);
+
+        CreateMazeWall(parent, "MazeEntryDivider", mazeCenter + new Vector3(0f, 0f, 4.0f), new Vector3(innerWallThickness, innerWallHeight, 2.15f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeEntryWestHook", mazeCenter + new Vector3(-2.65f, 0f, 2.95f), new Vector3(2.25f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeEntryEastHook", mazeCenter + new Vector3(2.75f, 0f, 2.85f), new Vector3(2.05f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeEntryWestBaitStem", mazeCenter + new Vector3(-3.35f, 0f, 1.15f), new Vector3(innerWallThickness, innerWallHeight, 2.35f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeEntryWestBaitCap", mazeCenter + new Vector3(-2.95f, 0f, 0.15f), new Vector3(1.75f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeEntryEastBaitStem", mazeCenter + new Vector3(2.95f, 0f, 1.3f), new Vector3(innerWallThickness, innerWallHeight, 2.1f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeEntryEastBaitCap", mazeCenter + new Vector3(2.35f, 0f, 0.4f), new Vector3(1.95f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+
+        CreateMazeWall(parent, "MazeSpiralOuterNorth", mazeCenter + new Vector3(-1.45f, 0f, 3.7f), new Vector3(6.05f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralOuterWest", mazeCenter + new Vector3(-4.5f, 0f, -0.15f), new Vector3(innerWallThickness, innerWallHeight, 7.9f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralOuterSouth", mazeCenter + new Vector3(-0.15f, 0f, -4.1f), new Vector3(8.7f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralOuterEastLower", mazeCenter + new Vector3(4.15f, 0f, -1.65f), new Vector3(innerWallThickness, innerWallHeight, 4.95f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralOuterEastUpper", mazeCenter + new Vector3(4.15f, 0f, 2.25f), new Vector3(innerWallThickness, innerWallHeight, 1.8f), mazeRotation, groundMaterial);
+
+        CreateMazeWall(parent, "MazeSpiralMidNorth", mazeCenter + new Vector3(0.85f, 0f, 1.9f), new Vector3(5.7f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralMidWest", mazeCenter + new Vector3(-1.85f, 0f, -0.1f), new Vector3(innerWallThickness, innerWallHeight, 4.3f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralMidEast", mazeCenter + new Vector3(3.75f, 0f, -0.55f), new Vector3(innerWallThickness, innerWallHeight, 4.8f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralMidSouthWest", mazeCenter + new Vector3(-2.55f, 0f, -2.55f), new Vector3(2.3f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralMidSouthEast", mazeCenter + new Vector3(2.15f, 0f, -3.0f), new Vector3(2.4f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSouthBaitStem", mazeCenter + new Vector3(-0.6f, 0f, -3.1f), new Vector3(innerWallThickness, innerWallHeight, 1.95f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSouthBaitCap", mazeCenter + new Vector3(-1.5f, 0f, -3.85f), new Vector3(1.9f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+
+        CreateMazeWall(parent, "MazeSpiralInnerNorth", mazeCenter + new Vector3(1.0f, 0f, 0.15f), new Vector3(3.45f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralInnerWest", mazeCenter + new Vector3(0.05f, 0f, -0.95f), new Vector3(innerWallThickness, innerWallHeight, 2.1f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralInnerSouth", mazeCenter + new Vector3(1.45f, 0f, -2.15f), new Vector3(4.25f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeSpiralInnerEast", mazeCenter + new Vector3(3.45f, 0f, -0.95f), new Vector3(innerWallThickness, innerWallHeight, 2.8f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeChamberNorthScreen", mazeCenter + new Vector3(2.05f, 0f, -0.15f), new Vector3(1.55f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeChamberSouthScreen", mazeCenter + new Vector3(2.0f, 0f, -1.85f), new Vector3(1.75f, innerWallHeight, innerWallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "MazeChamberBaitStem", mazeCenter + new Vector3(1.55f, 0f, -0.7f), new Vector3(innerWallThickness, innerWallHeight, 1.55f), mazeRotation, groundMaterial);
+
+        GameObject mazePedestal = CreateCylinder(parent, "MazeFragmentPedestal", MazeFragmentPedestalCenter, new Vector3(0.84f, 0.18f, 0.84f), groundMaterial, new Color(0.52f, 0.63f, 0.46f));
+        TrySetEmission(mazePedestal.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.025f));
+        CreateMazeDecoyPedestal(parent, "MazeDecoyWest", mazeCenter + new Vector3(-4.75f, 0.66f, 1.75f), new Vector3(0.52f, 0.16f, 0.52f), groundMaterial, new Color(0.42f, 0.51f, 0.39f), new Color(0.78f, 0.46f, 0.49f), 0.48f, 0.2f, fragmentRotation);
+        CreateMazeDecoyPedestal(parent, "MazeDecoySouth", mazeCenter + new Vector3(-2.1f, 0.62f, -4.55f), new Vector3(0.68f, 0.11f, 0.68f), groundMaterial, new Color(0.49f, 0.57f, 0.44f), new Color(0.74f, 0.48f, 0.55f), 0.52f, 0.18f, fragmentRotation);
+        CreateMazeDecoyPedestal(parent, "MazeDecoyEast", mazeCenter + new Vector3(4.95f, 0.7f, 3.45f), new Vector3(0.48f, 0.22f, 0.48f), groundMaterial, new Color(0.4f, 0.49f, 0.38f), new Color(0.82f, 0.45f, 0.44f), 0.44f, 0.18f, fragmentRotation);
+        CreateMazeDecoyPedestal(parent, "MazeDecoyChamber", mazeCenter + new Vector3(0.62f, 0.68f, -0.35f), new Vector3(0.62f, 0.19f, 0.62f), groundMaterial, new Color(0.45f, 0.54f, 0.41f), new Color(0.84f, 0.4f, 0.43f), 0.56f, 0.2f, fragmentRotation);
+
+        CreateMazeMarker(parent, "MazeEntryMarkerWest", mazeCenter + new Vector3(-1.15f, 0.15f, 5.45f), groundMaterial, hedgeTint, new Color(0.56f, 0.84f, 0.72f));
+        CreateMazeMarker(parent, "MazeEntryMarkerEast", mazeCenter + new Vector3(1.15f, 0.15f, 5.45f), groundMaterial, hedgeTint, new Color(0.56f, 0.84f, 0.72f));
+        CreateMazeMarker(parent, "MazeChamberMarker", mazeCenter + new Vector3(0.15f, 0.15f, -1.1f), groundMaterial, hedgeTint, new Color(0.86f, 0.52f, 0.56f));
+
     }
 
     private void CreateMemoryFragmentsAndOldVersionReference(Transform parent)
@@ -499,7 +536,7 @@ public class Scene : MonoBehaviour
         CreatePondFragmentPlatform(parent);
         CreateMemoryFragment(parent, PondFragmentPosition, FragmentType.Stabilizing);
         CreateMemoryFragment(parent, new Vector3(15.1f, 0.95f, 2.3f), FragmentType.Corrupted);
-        CreateMemoryFragment(parent, new Vector3(14.6f, 1.05f, -13.3f), FragmentType.Corrupted);
+        CreateMemoryFragment(parent, MazeFragmentPosition, FragmentType.Corrupted);
         CreateMemoryFragment(parent, new Vector3(10.2f, 0.9f, 13.8f), FragmentType.Stabilizing);
 
         GameObject memorialPlinth = CreateCylinder(parent, "OldVersionMemorialPlinth", new Vector3(0f, 0.56f, 6.9f), new Vector3(2.3f, 0.22f, 2.3f), CreateGroundMaterial(), new Color(0.49f, 0.5f, 0.56f));
@@ -543,12 +580,13 @@ public class Scene : MonoBehaviour
 
     private void CreateMemoryFragment(Transform parent, Vector3 position, FragmentType fragmentType)
     {
-        GameObject fragmentObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        fragmentObject.name = $"{fragmentType} Fragment";
-        fragmentObject.transform.SetParent(parent, false);
-        fragmentObject.transform.localPosition = ScaleWorld(position);
-        fragmentObject.transform.localScale = Vector3.one * 0.58f;
-        fragmentObject.transform.localRotation = Quaternion.Euler(35f, 35f, 0f);
+        Color color = fragmentType == FragmentType.Stabilizing
+            ? new Color(0.48f, 0.9f, 0.82f)
+            : new Color(0.84f, 0.38f, 0.42f);
+        GameObject fragmentObject = CreateFragmentVisual(parent, $"{fragmentType} Fragment", position, 0.58f, Quaternion.Euler(35f, 35f, 0f), color, 0.18f);
+
+        MemoryFragment fragment = fragmentObject.AddComponent<MemoryFragment>();
+        fragment.Configure(fragmentType);
 
         BoxCollider collider = fragmentObject.GetComponent<BoxCollider>();
         collider.center = Vector3.zero;
@@ -558,17 +596,21 @@ public class Scene : MonoBehaviour
         Rigidbody body = fragmentObject.AddComponent<Rigidbody>();
         body.isKinematic = true;
         body.useGravity = false;
+    }
 
-        MemoryFragment fragment = fragmentObject.AddComponent<MemoryFragment>();
-        fragment.Configure(fragmentType);
+    private GameObject CreateFragmentVisual(Transform parent, string name, Vector3 position, float size, Quaternion rotation, Color color, float emissionStrength)
+    {
+        GameObject fragmentObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        fragmentObject.name = name;
+        fragmentObject.transform.SetParent(parent, false);
+        fragmentObject.transform.localPosition = ScaleWorld(position);
+        fragmentObject.transform.localScale = Vector3.one * size;
+        fragmentObject.transform.localRotation = rotation;
 
-        Color color = fragmentType == FragmentType.Stabilizing
-            ? new Color(0.48f, 0.9f, 0.82f)
-            : new Color(0.84f, 0.38f, 0.42f);
-
-        Material material = CreateColorMaterial($"{fragmentType}FragmentMaterial", color);
-        TrySetEmission(material, color * 0.18f);
+        Material material = CreateColorMaterial($"{name}Material", color);
+        TrySetEmission(material, color * emissionStrength);
         fragmentObject.GetComponent<MeshRenderer>().sharedMaterial = material;
+        return fragmentObject;
     }
 
     private GameObject CreatePath(Transform parent, string name, Vector3 position, Vector3 scale, Quaternion rotation, PhysicsMaterial physicsMaterial, Color color)
@@ -1151,6 +1193,25 @@ public class Scene : MonoBehaviour
     private void CreateMazeWall(Transform parent, string name, Vector3 position, Vector3 scale, float yRotation, PhysicsMaterial material)
     {
         CreatePlatform(parent, name, position, scale, Quaternion.Euler(0f, yRotation, 0f), material, new Color(0.28f, 0.49f, 0.22f));
+    }
+
+    private void CreateMazeMarker(Transform parent, string name, Vector3 position, PhysicsMaterial groundMaterial, Color stoneColor, Color glowColor)
+    {
+        GameObject markerBase = CreateCylinder(parent, $"{name}_Base", position, new Vector3(0.22f, 0.44f, 0.22f), groundMaterial, stoneColor);
+        GameObject markerGlow = CreateSphere(parent, $"{name}_Glow", position + new Vector3(0f, 0.56f, 0f), new Vector3(0.22f, 0.22f, 0.22f), groundMaterial, glowColor);
+        MakeVisualOnly(markerGlow);
+        TrySetEmission(markerBase.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.025f));
+        TrySetEmission(markerGlow.GetComponent<MeshRenderer>().sharedMaterial, glowColor * 0.22f);
+    }
+
+    private void CreateMazeDecoyPedestal(Transform parent, string name, Vector3 position, Vector3 pedestalScale, PhysicsMaterial groundMaterial, Color pedestalColor, Color lureColor, float lureSize, float lureLift, Quaternion lureRotation)
+    {
+        GameObject pedestal = CreateCylinder(parent, $"{name}_Base", position, pedestalScale, groundMaterial, pedestalColor);
+        GameObject cap = CreateCylinder(parent, $"{name}_Cap", position + new Vector3(0f, pedestalScale.y + 0.035f, 0f), new Vector3(pedestalScale.x * 0.72f, 0.035f, pedestalScale.z * 0.72f), groundMaterial, pedestalColor * 1.05f);
+        GameObject lure = CreateFragmentVisual(parent, $"{name}_Lure", position + new Vector3(0f, pedestalScale.y + lureLift, 0f), lureSize, lureRotation, lureColor, 0.16f);
+        MakeVisualOnly(lure);
+        TrySetEmission(pedestal.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.025f));
+        TrySetEmission(cap.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.04f, 0.06f, 0.03f));
     }
 
     private GameObject FindOrCreate(string objectName)
