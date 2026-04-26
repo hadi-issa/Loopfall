@@ -15,6 +15,8 @@ public class Scene : MonoBehaviour
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
+    private static Vector3 MoundFragmentPedestalCenter => new(-11.35f, 1.16f, -8.45f);
+    private static Vector3 MoundFragmentPosition => new(MoundFragmentPedestalCenter.x, 1.42f, MoundFragmentPedestalCenter.z);
     private static Vector3 MazeFragmentPedestalCenter => new(14.55f, 0.74f, -14.2f);
     private static Vector3 MazeFragmentPosition => new(MazeFragmentPedestalCenter.x, 1.19f, MazeFragmentPedestalCenter.z);
 
@@ -458,9 +460,26 @@ public class Scene : MonoBehaviour
 
     private void CreateMoundGarden(Transform parent, PhysicsMaterial stableGround, PhysicsMaterial slickGround)
     {
-        CreateOrganicPatch(parent, "MoundLawn", new Vector3(-10.6f, 0.02f, -10.4f), new Vector3(16.2f, 0.2f, 11.6f), Quaternion.Euler(0f, 20f, 0f), stableGround, new Color(0.55f, 0.72f, 0.45f));
-        CreatePlatform(parent, "MoundSlope", new Vector3(-9.2f, 1.25f, -11.3f), new Vector3(12.8f, 2.2f, 7.5f), Quaternion.Euler(-2.5f, 18f, -18f), slickGround, new Color(0.74f, 0.76f, 0.8f));
-        CreatePlatform(parent, "MoundRidge", new Vector3(-11.6f, 2.55f, -11.1f), new Vector3(8.4f, 1.6f, 4.5f), Quaternion.Euler(-4f, -14f, 22f), slickGround, new Color(0.68f, 0.71f, 0.75f));
+        Color grassTint = new(0.5f, 0.68f, 0.39f);
+        Color slickStone = new(0.72f, 0.76f, 0.82f);
+        Color wornStone = new(0.64f, 0.68f, 0.72f);
+        Color exposedEarth = new(0.36f, 0.31f, 0.25f);
+
+        CreateOrganicPatch(parent, "MoundLawn", new Vector3(-10.6f, 0.02f, -10.4f), new Vector3(16.2f, 0.2f, 11.6f), Quaternion.Euler(0f, 20f, 0f), stableGround, grassTint);
+        CreatePath(parent, "MoundApproachScuff", new Vector3(-6.85f, 0.08f, -7.45f), new Vector3(5.4f, 0.12f, 2.15f), Quaternion.Euler(0f, 24f, 0f), stableGround, new Color(0.78f, 0.73f, 0.64f));
+
+        CreatePlatform(parent, "MoundLowerSlipFace", new Vector3(-8.7f, 0.42f, -10.8f), new Vector3(8.9f, 0.2f, 4.15f), Quaternion.Euler(-3f, 18f, -9f), slickGround, slickStone);
+        CreatePlatform(parent, "MoundBrakeShelf", new Vector3(-10.65f, 0.66f, -9.75f), new Vector3(4.85f, 0.16f, 2.25f), Quaternion.Euler(0f, 14f, -2f), stableGround, wornStone);
+        CreatePlatform(parent, "MoundUpperSlipFace", new Vector3(-12.15f, 0.88f, -10.35f), new Vector3(5.6f, 0.18f, 3.55f), Quaternion.Euler(3f, -10f, 9f), slickGround, new Color(0.68f, 0.72f, 0.78f));
+        CreatePlatform(parent, "MoundMemoryCrest", new Vector3(-11.35f, 0.98f, -8.45f), new Vector3(3.25f, 0.18f, 2.25f), Quaternion.Euler(0f, -8f, 0f), stableGround, wornStone);
+
+        CreatePlatform(parent, "MoundExposedBank", new Vector3(-13.8f, 0.36f, -7.25f), new Vector3(5.2f, 0.18f, 1.45f), Quaternion.Euler(0f, -18f, 6f), stableGround, exposedEarth);
+        CreatePlatform(parent, "MoundLeftBrokenKerb", new Vector3(-12.9f, 0.8f, -11.95f), new Vector3(4.4f, 0.18f, 0.32f), Quaternion.Euler(0f, -11f, 10f), stableGround, new Color(0.55f, 0.58f, 0.61f));
+        CreatePlatform(parent, "MoundRightBrokenKerb", new Vector3(-8.15f, 0.53f, -8.95f), new Vector3(3.35f, 0.16f, 0.3f), Quaternion.Euler(0f, 19f, -7f), stableGround, new Color(0.58f, 0.61f, 0.64f));
+
+        GameObject moundPedestal = CreateCylinder(parent, "MoundFragmentPedestal", MoundFragmentPedestalCenter, new Vector3(0.74f, 0.09f, 0.74f), stableGround, new Color(0.55f, 0.62f, 0.54f));
+        TrySetEmission(moundPedestal.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.035f));
+
         CreateScatteredPebbles(parent, new Vector3(-5.4f, 0.26f, -5.8f), 6, 2.2f);
     }
 
@@ -532,7 +551,7 @@ public class Scene : MonoBehaviour
 
     private void CreateMemoryFragmentsAndOldVersionReference(Transform parent)
     {
-        CreateMemoryFragment(parent, new Vector3(-11.4f, 0.9f, -8.4f), FragmentType.Stabilizing);
+        CreateMemoryFragment(parent, MoundFragmentPosition, FragmentType.Stabilizing);
         CreatePondFragmentPlatform(parent);
         CreateMemoryFragment(parent, PondFragmentPosition, FragmentType.Stabilizing);
         CreateMemoryFragment(parent, new Vector3(15.1f, 0.95f, 2.3f), FragmentType.Corrupted);
