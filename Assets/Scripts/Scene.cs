@@ -16,6 +16,7 @@ public class Scene : MonoBehaviour
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
+    private static Vector3 StoneParkourFragmentPosition => new(17f, 1.26f, 10.35f);
     private static Vector3 MountainFragmentPedestalCenter => new(-14.75f, MountainPeakFragmentY - 0.26f, -8.1f);
     private static Vector3 MountainFragmentPosition => new(MountainFragmentPedestalCenter.x, MountainPeakFragmentY, MountainFragmentPedestalCenter.z);
     private static Vector3 MazeFragmentPedestalCenter => new(14.55f, 0.74f, -14.2f);
@@ -431,17 +432,22 @@ public class Scene : MonoBehaviour
 
         Vector3[] stones =
         {
-            new(9f, 0.36f, 14f),
-            new(12.5f, 0.3f, 14.8f),
-            new(15f, 0.32f, 13.1f),
-            new(11.2f, 0.34f, 10.9f),
-            new(14.6f, 0.3f, 9.5f),
-            new(16.2f, 0.28f, 15.6f),
+            new(8.9f, 0.62f, 14.2f),
+            new(10.7f, 0.72f, 13.35f),
+            new(12.55f, 0.66f, 14.15f),
+            new(14.25f, 0.78f, 13.05f),
+            new(15.75f, 0.68f, 11.75f),
+            new(17.0f, 0.76f, 10.35f),
         };
+
+        CreateStoneParkourHazard(parent, stones);
 
         for (int i = 0; i < stones.Length; i++)
         {
-            CreateSphere(parent, $"Stone_{i}", stones[i], new Vector3(2.2f, 0.85f, 1.7f), groundMaterial, new Color(0.78f, 0.8f, 0.82f));
+            Vector3 stoneScale = new(1.75f + (i % 2) * 0.16f, 0.66f + (i % 3) * 0.05f, 1.35f + (i % 2) * 0.12f);
+            GameObject stone = CreateSphere(parent, $"Stone_{i}", stones[i], stoneScale, groundMaterial, new Color(0.78f, 0.8f, 0.82f));
+            stone.transform.localRotation = Quaternion.Euler(0f, -28f + i * 19f, 0f);
+            CreatePebbleDetails(parent, stones[i], stoneScale, -0.4f + i * 0.33f, i);
         }
 
         CreateScatteredPebbles(parent, new Vector3(17.1f, 0.16f, 9.6f), 8, 2.4f);
@@ -611,7 +617,7 @@ public class Scene : MonoBehaviour
         CreateMemoryFragment(parent, PondFragmentPosition, FragmentType.Stabilizing);
         CreateMemoryFragment(parent, new Vector3(15.1f, 0.95f, 2.3f), FragmentType.Corrupted);
         CreateMemoryFragment(parent, MazeFragmentPosition, FragmentType.Corrupted);
-        CreateMemoryFragment(parent, new Vector3(10.2f, 0.9f, 13.8f), FragmentType.Stabilizing);
+        CreateMemoryFragment(parent, StoneParkourFragmentPosition, FragmentType.Stabilizing);
 
         GameObject memorialPlinth = CreateCylinder(parent, "OldVersionMemorialPlinth", new Vector3(0f, 0.56f, 6.9f), new Vector3(2.3f, 0.22f, 2.3f), CreateGroundMaterial(), new Color(0.49f, 0.5f, 0.56f));
         TrySetEmission(memorialPlinth.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.07f));
@@ -850,6 +856,64 @@ public class Scene : MonoBehaviour
             triangles[tri] = 0;
             triangles[tri + 1] = i + 1;
             triangles[tri + 2] = next + 1;
+        }
+
+        Mesh mesh = new()
+        {
+            name = $"{name}Mesh",
+            vertices = vertices,
+            triangles = triangles,
+        };
+
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    private GameObject CreateSpike(Transform parent, string name, Vector3 position, Vector3 scale, Color color)
+    {
+        GameObject spike = new(name);
+        spike.transform.SetParent(parent, false);
+        spike.transform.localPosition = ScaleWorld(position);
+        spike.transform.localRotation = Quaternion.Euler(0f, position.x * 31f + position.z * 17f, 0f);
+        spike.transform.localScale = ScaleWorld(scale);
+
+        MeshFilter meshFilter = spike.AddComponent<MeshFilter>();
+        meshFilter.sharedMesh = CreateSpikeMesh(name);
+
+        Material material = CreateColorMaterial($"{name}Material", color);
+        TrySetEmission(material, new Color(0.03f, 0.04f, 0.045f));
+        spike.AddComponent<MeshRenderer>().sharedMaterial = material;
+        return spike;
+    }
+
+    private Mesh CreateSpikeMesh(string name)
+    {
+        const int sides = 6;
+        Vector3[] vertices = new Vector3[sides + 2];
+        int[] triangles = new int[sides * 6];
+
+        vertices[0] = new Vector3(0f, 1f, 0f);
+        vertices[1] = Vector3.zero;
+
+        for (int i = 0; i < sides; i++)
+        {
+            float angle = i / (float)sides * Mathf.PI * 2f;
+            vertices[i + 2] = new Vector3(Mathf.Cos(angle) * 0.5f, 0f, Mathf.Sin(angle) * 0.5f);
+        }
+
+        for (int i = 0; i < sides; i++)
+        {
+            int next = (i + 1) % sides;
+            int sideTri = i * 3;
+            triangles[sideTri] = 0;
+            triangles[sideTri + 1] = i + 2;
+            triangles[sideTri + 2] = next + 2;
+
+            int baseTri = sides * 3 + i * 3;
+            triangles[baseTri] = 1;
+            triangles[baseTri + 1] = next + 2;
+            triangles[baseTri + 2] = i + 2;
         }
 
         Mesh mesh = new()
@@ -1107,9 +1171,71 @@ public class Scene : MonoBehaviour
             float angle = i / (float)count * Mathf.PI * 2f;
             float distance = radius * (0.45f + (i % 3) * 0.2f);
             Vector3 position = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
-            GameObject pebble = CreateSphere(parent, $"Pebble_{i}_{center.x:F1}", position, new Vector3(0.55f + (i % 2) * 0.18f, 0.18f, 0.42f + (i % 3) * 0.08f), CreateGroundMaterial(), new Color(0.58f, 0.6f, 0.62f));
+            float warmTint = (i % 4) * 0.025f;
+            Vector3 baseScale = new(0.55f + (i % 2) * 0.18f, 0.18f + (i % 3) * 0.018f, 0.42f + (i % 3) * 0.08f);
+            Color baseColor = Color.Lerp(new Color(0.48f, 0.51f, 0.55f), new Color(0.68f, 0.68f, 0.64f), 0.34f + warmTint);
+            GameObject pebble = CreateSphere(parent, $"Pebble_{i}_{center.x:F1}", position, baseScale, CreateGroundMaterial(), baseColor);
             pebble.transform.localRotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg, 0f);
+
+            CreatePebbleDetails(parent, position, baseScale, angle, i);
         }
+    }
+
+    private void CreateStoneParkourHazard(Transform parent, Vector3[] stones)
+    {
+        Vector3 center = Vector3.zero;
+        for (int i = 0; i < stones.Length; i++)
+        {
+            center += stones[i];
+        }
+
+        center /= stones.Length;
+        center.y = 0f;
+
+        Quaternion pitRotation = Quaternion.Euler(0f, -19f, 0f);
+        Color pitColor = new(0.16f, 0.18f, 0.2f);
+        GameObject pitFloor = CreateBox(parent, "StoneParkourSpikePit", center + Vector3.up * 0.05f, new Vector3(11.8f, 0.035f, 7.1f), pitRotation, CreateGroundMaterial(), pitColor);
+        MakeVisualOnly(pitFloor);
+
+        CreateHazardBox(parent, "StoneParkourSpikeHazard", center + Vector3.up * 0.24f, new Vector3(11.8f, 0.44f, 7.1f), pitRotation, "Landed on the spikes");
+
+        int spikeCount = 132;
+        for (int i = 0; i < spikeCount; i++)
+        {
+            int columns = 12;
+            float row = i / (float)columns;
+            float column = i % columns;
+            float x = (column - 5.5f) * 0.82f + Mathf.Sin(row * 1.7f) * 0.14f;
+            float z = (row - 5f) * 0.58f + Mathf.Cos(column * 0.8f) * 0.1f;
+            Vector3 localOffset = pitRotation * new Vector3(x, 0f, z);
+            Vector3 spikePosition = center + localOffset + Vector3.up * 0.08f;
+            Vector3 spikeScale = new(0.13f + (i % 3) * 0.016f, 0.36f + (i % 4) * 0.055f, 0.13f + (i % 3) * 0.016f);
+            CreateSpike(parent, $"StoneParkourSpike_{i}", spikePosition, spikeScale, new Color(0.38f, 0.42f, 0.46f));
+        }
+    }
+
+    private void CreatePebbleDetails(Transform parent, Vector3 position, Vector3 baseScale, float angle, int index)
+    {
+        Vector3 forward = new(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+        Vector3 right = new(-forward.z, 0f, forward.x);
+        Color highlightColor = new(0.82f, 0.85f, 0.88f);
+        Color chipColor = new(0.38f, 0.42f, 0.46f);
+        Color rimColor = new(0.3f, 0.34f, 0.38f);
+
+        Vector3 highlightPosition = position + right * (0.05f + (index % 2) * 0.04f) + forward * -0.08f + Vector3.up * (baseScale.y * 0.34f);
+        GameObject highlight = CreateSphere(parent, $"PebbleHighlight_{index}_{position.x:F1}", highlightPosition, Vector3.Scale(baseScale, new Vector3(0.5f, 0.18f, 0.32f)), CreateGroundMaterial(), highlightColor);
+        highlight.transform.localRotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg + 14f, 0f);
+        MakeVisualOnly(highlight);
+
+        Vector3 chipPosition = position + right * (-0.18f + (index % 3) * 0.05f) + forward * 0.12f + Vector3.up * (baseScale.y * 0.12f);
+        GameObject chip = CreateSphere(parent, $"PebbleChip_{index}_{position.x:F1}", chipPosition, Vector3.Scale(baseScale, new Vector3(0.2f, 0.2f, 0.16f)), CreateGroundMaterial(), chipColor);
+        chip.transform.localRotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg - 28f, 0f);
+        MakeVisualOnly(chip);
+
+        Vector3 rimPosition = position + forward * (baseScale.z * 0.18f) + Vector3.up * (baseScale.y * -0.08f);
+        GameObject rim = CreateSphere(parent, $"PebbleRim_{index}_{position.x:F1}", rimPosition, Vector3.Scale(baseScale, new Vector3(0.72f, 0.12f, 0.2f)), CreateGroundMaterial(), rimColor);
+        rim.transform.localRotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg, 0f);
+        MakeVisualOnly(rim);
     }
 
     private static float ScaleWorld(float value)
@@ -1230,6 +1356,28 @@ public class Scene : MonoBehaviour
         }
 
         ConfigureTriggerMeshCollider(hazard);
+
+        HazardVolume hazardVolume = hazard.AddComponent<HazardVolume>();
+        hazardVolume.Configure(reason);
+        return hazard;
+    }
+
+    private GameObject CreateHazardBox(Transform parent, string name, Vector3 position, Vector3 size, string reason)
+    {
+        return CreateHazardBox(parent, name, position, size, Quaternion.identity, reason);
+    }
+
+    private GameObject CreateHazardBox(Transform parent, string name, Vector3 position, Vector3 size, Quaternion rotation, string reason)
+    {
+        GameObject hazard = new(name);
+        hazard.transform.SetParent(parent, false);
+        hazard.transform.localPosition = ScaleWorld(position);
+        hazard.transform.localRotation = rotation;
+
+        BoxCollider trigger = hazard.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.center = Vector3.zero;
+        trigger.size = ScaleWorld(size);
 
         HazardVolume hazardVolume = hazard.AddComponent<HazardVolume>();
         hazardVolume.Configure(reason);
