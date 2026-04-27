@@ -11,12 +11,13 @@ public class Scene : MonoBehaviour
     private const float PondLilyPadSurfaceOffset = 0.006f;
     private const float PondWaterHazardTopY = PondWaterCenterY + PondWaterHalfHeight + 0.002f;
     private const float FountainWaterHazardTopY = 0.658f;
+    private const float MountainPeakFragmentY = 70.2f;
     private static Vector3 PlayerSpawnPosition => new(0f, ScaleWorldY(0.31f) + Config.SoccerBallRadius + 0.06f, ScaleWorld(-16f));
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
-    private static Vector3 MoundFragmentPedestalCenter => new(-11.35f, 1.16f, -8.45f);
-    private static Vector3 MoundFragmentPosition => new(MoundFragmentPedestalCenter.x, 1.42f, MoundFragmentPedestalCenter.z);
+    private static Vector3 MountainFragmentPedestalCenter => new(-14.75f, MountainPeakFragmentY - 0.26f, -8.1f);
+    private static Vector3 MountainFragmentPosition => new(MountainFragmentPedestalCenter.x, MountainPeakFragmentY, MountainFragmentPedestalCenter.z);
     private static Vector3 MazeFragmentPedestalCenter => new(14.55f, 0.74f, -14.2f);
     private static Vector3 MazeFragmentPosition => new(MazeFragmentPedestalCenter.x, 1.19f, MazeFragmentPedestalCenter.z);
 
@@ -302,7 +303,7 @@ public class Scene : MonoBehaviour
         CreateFlowerWalk(mapRoot, stableGround);
         CreateStoneField(mapRoot, stableGround);
         CreatePalmCourt(mapRoot, stableGround);
-        CreateMoundGarden(mapRoot, stableGround, slickGround);
+        CreateMountainGarden(mapRoot, stableGround, slickGround);
         CreateMazeGarden(mapRoot, stableGround);
         CreatePoolBroadwayRelic(mapRoot, stableGround);
         CreateMemoryFragmentsAndOldVersionReference(mapRoot);
@@ -458,29 +459,83 @@ public class Scene : MonoBehaviour
         CreatePalmTree(parent, new Vector3(12f, 0.2f, -6.2f), 2.5f);
     }
 
-    private void CreateMoundGarden(Transform parent, PhysicsMaterial stableGround, PhysicsMaterial slickGround)
+    private void CreateMountainGarden(Transform parent, PhysicsMaterial stableGround, PhysicsMaterial slickGround)
     {
-        Color grassTint = new(0.5f, 0.68f, 0.39f);
-        Color slickStone = new(0.72f, 0.76f, 0.82f);
-        Color wornStone = new(0.64f, 0.68f, 0.72f);
-        Color exposedEarth = new(0.36f, 0.31f, 0.25f);
+        const int switchbackCount = 15;
+        const float mountainBaseY = 0.58f;
+        const float mountainPeakCapY = MountainPeakFragmentY - 0.45f;
+        Color grassTint = new(0.46f, 0.62f, 0.36f);
+        Color slickStone = new(0.72f, 0.77f, 0.84f);
+        Color wornStone = new(0.6f, 0.64f, 0.68f);
+        Color cliffStone = new(0.35f, 0.39f, 0.43f);
+        Color exposedEarth = new(0.34f, 0.29f, 0.23f);
 
-        CreateOrganicPatch(parent, "MoundLawn", new Vector3(-10.6f, 0.02f, -10.4f), new Vector3(16.2f, 0.2f, 11.6f), Quaternion.Euler(0f, 20f, 0f), stableGround, grassTint);
-        CreatePath(parent, "MoundApproachScuff", new Vector3(-6.85f, 0.08f, -7.45f), new Vector3(5.4f, 0.12f, 2.15f), Quaternion.Euler(0f, 24f, 0f), stableGround, new Color(0.78f, 0.73f, 0.64f));
+        CreateOrganicPatch(parent, "MountainLawn", new Vector3(-11.6f, 0.02f, -10.25f), new Vector3(18.2f, 0.22f, 13.6f), Quaternion.Euler(0f, 20f, 0f), stableGround, grassTint);
+        CreatePath(parent, "MountainApproachScuff", new Vector3(-6.35f, 0.08f, -7.55f), new Vector3(5.3f, 0.12f, 2.1f), Quaternion.Euler(0f, 24f, 0f), stableGround, new Color(0.78f, 0.73f, 0.64f));
 
-        CreatePlatform(parent, "MoundLowerSlipFace", new Vector3(-8.7f, 0.42f, -10.8f), new Vector3(8.9f, 0.2f, 4.15f), Quaternion.Euler(-3f, 18f, -9f), slickGround, slickStone);
-        CreatePlatform(parent, "MoundBrakeShelf", new Vector3(-10.65f, 0.66f, -9.75f), new Vector3(4.85f, 0.16f, 2.25f), Quaternion.Euler(0f, 14f, -2f), stableGround, wornStone);
-        CreatePlatform(parent, "MoundUpperSlipFace", new Vector3(-12.15f, 0.88f, -10.35f), new Vector3(5.6f, 0.18f, 3.55f), Quaternion.Euler(3f, -10f, 9f), slickGround, new Color(0.68f, 0.72f, 0.78f));
-        CreatePlatform(parent, "MoundMemoryCrest", new Vector3(-11.35f, 0.98f, -8.45f), new Vector3(3.25f, 0.18f, 2.25f), Quaternion.Euler(0f, -8f, 0f), stableGround, wornStone);
+        Vector3[] route = new Vector3[switchbackCount + 1];
+        for (int i = 0; i <= switchbackCount; i++)
+        {
+            float t = i / (float)switchbackCount;
+            float side = i % 2 == 0 ? 1f : -1f;
+            float span = 5.8f;
+            float centerX = Mathf.Lerp(-11.2f, -14.75f, t);
+            float z = Mathf.Lerp(-12.1f, -8.1f, t) + Mathf.Sin(t * Mathf.PI * 3f) * 0.45f;
+            route[i] = new Vector3(centerX + side * span, Mathf.Lerp(mountainBaseY, mountainPeakCapY, t), z);
+        }
 
-        CreatePlatform(parent, "MoundExposedBank", new Vector3(-13.8f, 0.36f, -7.25f), new Vector3(5.2f, 0.18f, 1.45f), Quaternion.Euler(0f, -18f, 6f), stableGround, exposedEarth);
-        CreatePlatform(parent, "MoundLeftBrokenKerb", new Vector3(-12.9f, 0.8f, -11.95f), new Vector3(4.4f, 0.18f, 0.32f), Quaternion.Euler(0f, -11f, 10f), stableGround, new Color(0.55f, 0.58f, 0.61f));
-        CreatePlatform(parent, "MoundRightBrokenKerb", new Vector3(-8.15f, 0.53f, -8.95f), new Vector3(3.35f, 0.16f, 0.3f), Quaternion.Euler(0f, 19f, -7f), stableGround, new Color(0.58f, 0.61f, 0.64f));
+        route[0] = new Vector3(-6.35f, mountainBaseY, -11.45f);
+        route[switchbackCount] = new Vector3(-14.75f, mountainPeakCapY, -8.1f);
 
-        GameObject moundPedestal = CreateCylinder(parent, "MoundFragmentPedestal", MoundFragmentPedestalCenter, new Vector3(0.74f, 0.09f, 0.74f), stableGround, new Color(0.55f, 0.62f, 0.54f));
-        TrySetEmission(moundPedestal.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.035f));
+        for (int i = 0; i < switchbackCount; i++)
+        {
+            float t = i / (float)switchbackCount;
+            float width = 2.55f;
+            Color rampColor = Color.Lerp(slickStone, new Color(0.54f, 0.6f, 0.68f), t);
+            CreateMountainRamp(parent, $"MountainSwitchbackRamp_{i + 1}", route[i], route[i + 1], width, 0.16f, slickGround, rampColor);
 
+            if (i > 0)
+            {
+                float shelfWidth = 2.8f;
+                CreatePlatform(parent, $"MountainShelf_{i}", route[i], new Vector3(shelfWidth, 0.14f, shelfWidth * 0.72f), Quaternion.Euler(0f, -8f + i * 17f, 0f), stableGround, wornStone);
+            }
+        }
+
+        for (int i = 0; i < 7; i++)
+        {
+            float t0 = i / 7f;
+            float t1 = (i + 1) / 7f;
+            float centerY = Mathf.Lerp(0.42f, mountainPeakCapY - 1.6f, (t0 + t1) * 0.5f);
+            float halfHeight = Mathf.Max(0.24f, (mountainPeakCapY - 2.02f) / 14f);
+            float radius = Mathf.Lerp(5.4f, 1.05f, t1);
+            Vector3 corePosition = new(Mathf.Lerp(-10.9f, -14.55f, t1), centerY, Mathf.Lerp(-10.7f, -8.45f, t1));
+            CreateCylinder(parent, $"MountainRockMass_{i + 1}", corePosition, new Vector3(radius, halfHeight, radius * 0.78f), stableGround, Color.Lerp(exposedEarth, cliffStone, t1));
+        }
+
+        CreatePlatform(parent, "MountainPeakCap", new Vector3(-14.75f, mountainPeakCapY, -8.1f), new Vector3(1.45f, 0.18f, 1.15f), Quaternion.Euler(0f, -8f, 0f), stableGround, wornStone);
+
+        CreatePlatform(parent, "MountainExposedBank", new Vector3(-14.15f, 0.44f, -7.1f), new Vector3(5.25f, 0.18f, 1.45f), Quaternion.Euler(0f, -18f, 6f), stableGround, exposedEarth);
+        CreatePlatform(parent, "MountainBrokenKerbLower", new Vector3(-12.9f, 0.96f, -12.08f), new Vector3(4.45f, 0.2f, 0.34f), Quaternion.Euler(0f, -11f, 12f), stableGround, new Color(0.55f, 0.58f, 0.61f));
+        CreatePlatform(parent, "MountainBrokenKerbUpper", new Vector3(-14.95f, 42.5f, -9.78f), new Vector3(2.4f, 0.16f, 0.28f), Quaternion.Euler(0f, 8f, 17f), stableGround, new Color(0.5f, 0.54f, 0.58f));
+
+        GameObject mountainPedestal = CreateCylinder(parent, "MountainFragmentPedestal", MountainFragmentPedestalCenter, new Vector3(0.58f, 0.08f, 0.58f), stableGround, new Color(0.55f, 0.62f, 0.54f));
+        TrySetEmission(mountainPedestal.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.03f, 0.05f, 0.035f));
+
+        CreateSphere(parent, "MountainBoulderLower", new Vector3(-9.7f, 0.82f, -11.75f), new Vector3(0.72f, 0.42f, 0.56f), stableGround, new Color(0.48f, 0.52f, 0.56f));
+        CreateSphere(parent, "MountainBoulderMiddle", new Vector3(-12.0f, 28.8f, -10.85f), new Vector3(0.62f, 0.38f, 0.5f), stableGround, new Color(0.46f, 0.5f, 0.53f));
+        CreateSphere(parent, "MountainBoulderUpper", new Vector3(-14.0f, 50.7f, -9.42f), new Vector3(0.52f, 0.34f, 0.44f), stableGround, new Color(0.44f, 0.48f, 0.51f));
         CreateScatteredPebbles(parent, new Vector3(-5.4f, 0.26f, -5.8f), 6, 2.2f);
+    }
+
+    private void CreateMountainRamp(Transform parent, string name, Vector3 start, Vector3 end, float width, float thickness, PhysicsMaterial material, Color color)
+    {
+        Vector3 horizontalDelta = new(end.x - start.x, 0f, end.z - start.z);
+        float length = Mathf.Max(0.1f, horizontalDelta.magnitude);
+        float yRotation = Mathf.Atan2(-horizontalDelta.z, horizontalDelta.x) * Mathf.Rad2Deg;
+        float slopeAngle = Mathf.Atan2(ScaleWorldY(end.y - start.y), ScaleWorld(length)) * Mathf.Rad2Deg;
+        Vector3 center = (start + end) * 0.5f;
+
+        CreatePlatform(parent, name, center, new Vector3(length * 1.04f, thickness, width), Quaternion.Euler(0f, yRotation, slopeAngle), material, color);
     }
 
     private void CreateMazeGarden(Transform parent, PhysicsMaterial groundMaterial)
@@ -551,7 +606,7 @@ public class Scene : MonoBehaviour
 
     private void CreateMemoryFragmentsAndOldVersionReference(Transform parent)
     {
-        CreateMemoryFragment(parent, MoundFragmentPosition, FragmentType.Stabilizing);
+        CreateMemoryFragment(parent, MountainFragmentPosition, FragmentType.Stabilizing);
         CreatePondFragmentPlatform(parent);
         CreateMemoryFragment(parent, PondFragmentPosition, FragmentType.Stabilizing);
         CreateMemoryFragment(parent, new Vector3(15.1f, 0.95f, 2.3f), FragmentType.Corrupted);

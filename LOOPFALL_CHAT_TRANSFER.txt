@@ -1,0 +1,332 @@
+LOOPFALL CODEX CHAT TRANSFER
+Generated: 2026-04-26, Australia/Sydney
+Project path: C:\Loopfall
+GitHub repo: https://github.com/hadi-issa/Loopfall.git
+Current branch: main
+
+IMPORTANT NOTE
+This is a practical transfer brief, not a perfect verbatim transcript. The old Codex thread had already been partly summarized/compacted before this file was created, so this file preserves all available working context, decisions, bugs, fixes, current state, and next steps.
+
+============================================================
+PROJECT OVERVIEW
+============================================================
+
+Project name: Loopfall
+Engine: Unity 3D
+Genre: narrative-driven atmospheric exploration prototype
+Core themes: time loops, decay, memory, emotional processing
+Combat: none
+
+Player concept:
+- The player is a physical ball, not a humanoid.
+- Movement must be Rigidbody/physics based.
+- Movement should feel responsive but slightly unstable.
+- The ball should have momentum, slipping, and loss-of-control vibes.
+- No animation-driven movement.
+
+Core loop:
+1. Player spawns at start.
+2. Explores the environment.
+3. Collects Memory Fragments.
+4. World decays over time.
+5. Loop ends by completion, fall, timer, or trigger.
+6. Persistent progress carries forward.
+
+Intended loop structure:
+- Total loops planned: 10.
+- Loops should behave more like levels/stages than deaths.
+- Current HUD wording should say "Loop", not "Loop Level".
+
+Scenes:
+- StartMenu
+- Loopfall
+- ResolutionScene planned later
+
+Main systems/files that matter:
+- Assets/Scripts/Scene.cs
+- Assets/Scripts/Player.cs
+- Assets/Scripts/PlayerCameraController.cs
+- Assets/Scripts/FountainController.cs
+- Assets/Scripts/GameManager.cs
+- Assets/Scripts/LoopManager.cs
+- Assets/Scripts/MemoryManager.cs
+- Assets/Scripts/MemoryFragment.cs
+- Assets/Scripts/LoopfallAudio.cs
+- Assets/Scripts/PrototypeHud.cs
+- Assets/Scripts/MenuPresentation.cs
+- Assets/Scripts/MenuBackdropDrift.cs
+- Assets/Scripts/MenuButtonAnimator.cs
+
+============================================================
+CURRENT GIT STATE
+============================================================
+
+Current branch: main
+Latest pushed commit:
+- efb942d Refine fountain tuning and maze deception
+
+Recent commits:
+- efb942d Refine fountain tuning and maze deception
+- 192e6d7 Refine Loopfall scene visuals
+- 6bdf6c8 Refine Loopfall prototype systems
+- 4b07b7c Enhance README with comprehensive game details
+- 4a08ea7 Delete LICENSE
+
+The gameplay script changes have been committed and pushed to origin/main.
+
+Remaining dirty/untracked files are local Unity/editor junk and were intentionally NOT committed:
+- Logs/*
+- UserSettings/*
+- Assets/_Recovery/*
+- hadi_page1.png
+
+Do not commit those unless the user explicitly asks and understands they are editor/generated files.
+
+============================================================
+USER STYLE / COLLABORATION CONTEXT
+============================================================
+
+The user wants practical results in Unity, not vague plans.
+They playtest frequently and expects Codex to say when it is time to playtest.
+They prefer direct fixes and can be blunt when something looks lazy or wrong.
+Keep calm, be warm, and do not get defensive.
+When something is wrong, own it and fix it.
+
+Important user preferences:
+- Tell them when to playtest.
+- Do not abruptly stop after partial work.
+- Do not over-explain obvious things unless asked.
+- Avoid "AI slop" visuals.
+- The game should feel intentional, not thrown together.
+- For Unity scene work, remove ugly placeholder-looking objects instead of hiding collision or adding invisible fixes.
+- They like nods to older versions of the game, such as PoolBroadway and lantern posts.
+
+============================================================
+MAJOR IMPLEMENTED FEATURES
+============================================================
+
+PLAYER / PHYSICS
+- Player is a Rigidbody ball.
+- Movement uses AddForce.
+- Gravity enabled.
+- Ball size was adjusted to feel around soccer-ball scale, then later increased by 1.5x.
+- Jumping exists and was increased after user said it felt like skipping.
+- Camera is mouse-look enabled, not locked.
+- Camera default zoom was tuned several times. User wanted a view close to a provided reference image, not too close and not too far.
+- Mouse cursor bug on start menu was fixed: clicking menu no longer steals/hides the cursor incorrectly.
+
+START MENU
+- Start button loads Loopfall scene.
+- Quit button exits play mode/app.
+- Relaunch resets progress and loads fresh Loopfall.
+- Start menu visuals were polished: title, buttons, background.
+- Menu audio was repeatedly troublesome; later user paused music work because they did not have headphones.
+
+AUDIO
+- There was a lot of trouble with menu music vs gameplay music.
+- User wanted a hard line between menu music and gameplay music.
+- At one point they authorized reworking only the music system.
+- Later, all sounds went silent and the user suspected lifecycle/audio files.
+- User said audio files are in Downloads.
+- Audio is not the current focus; maze work is current.
+
+PAUSE SYSTEM
+- Pause does not freeze the world.
+- It slows time instead.
+- Pause menu exists.
+- Restart loop button was removed because it ruined the game concept.
+- Pause buffering issue was addressed, though user later found a jump exploit was actually just normal jumping between fountain blocks.
+
+POND
+- Pond is underground like a real pond.
+- Water kills player if grazed.
+- Lily pads sit on water surface.
+- Lily pads are randomly scattered but should maintain a possible route.
+- Big lily pad removed/replaced by smaller random pads.
+- Previous neatly arranged lily pad line was removed and replaced with random-ish possible path.
+- Pond borders were raised so the player cannot jump onto them casually.
+- There is an entrance directly opposite the fragment.
+- Lanterns are aligned with entrance.
+- White squares in pond were removed/replaced with lily pads.
+- Memory fragment sits on a platform so player cannot collect it from underneath.
+
+FOUNTAIN
+- Center object is a fountain.
+- Fountain used to look like it floated or had floating water.
+- Several fixes were made:
+  - Fountain water widened.
+  - Fountain water lowered/deepened.
+  - Wave animation removed from fountain water.
+  - Fountain water hazard top adjusted.
+  - FountainController now only animates the core, not the water surface.
+- Current state was considered good enough to move on to maze.
+- Watch for fountain edge false-kill bugs if the user revisits fountain.
+
+LANTERNS / FIRE
+- Lantern posts were kept as a nod to old version.
+- Flames were scaled up and aligned with posts.
+- Early flame shapes looked like eggs/leaves/cones and were iterated.
+- Current flame visuals were accepted as "a bit better".
+- Avoid egg/leaf/cone-looking fire in future edits.
+
+OLD VERSION REFERENCES
+- Shrine.cs was removed from Assets/Scripts.
+- Shrine interaction was removed/replaced.
+- An OldVersionMemorial decorative reference was added.
+- PoolBroadway exists as a brown square reference that flings randomly like old version.
+- PoolBroadway fling power was increased 5x.
+- If PoolBroadway flings off the map, it respawns in same area.
+
+UI / HUD
+- User hated the original debug HUD in top-left.
+- Clean pause menu was added.
+- Pause menu text changed from "Loop Level" to "Loop".
+- Restart loop button was removed.
+- User asked what "Loop Held Open" meant. It was explained as a thematic phrase meaning time is slowed, not frozen.
+- Button sizing and vertical spacing in pause menu were adjusted.
+
+GITHUB
+- User learned GitHub symbol does not mean auto-commit.
+- Branch newcode existed earlier, then user asked to delete it and use main.
+- main is the active branch.
+- Pushed to GitHub main multiple times.
+
+============================================================
+CURRENT MAZE WORK
+============================================================
+
+The maze is the current focus.
+
+Initial maze problems:
+- It was incomplete and too open.
+- Random stones/flower blobs cluttered it.
+- Barriers were too low and the player could peek over them.
+- There was a random platform/catwalk slab called MazeEntryCourt that looked wrong.
+- Maze lacked deception/red herrings.
+
+Current maze implementation in Assets/Scripts/Scene.cs:
+- CreateMazeGarden builds the maze procedurally at runtime.
+- Maze base position centers around:
+  - mazeCenter = new Vector3(12.8f, 0.78f, -13.5f)
+  - mazeRotation = -8f
+- Maze walls use CreateMazeWall.
+- Maze outer wall height:
+  - outerWallHeight = 3.05f
+- Maze inner wall height:
+  - innerWallHeight = 2.75f
+- Outer wall thickness:
+  - outerWallThickness = 0.52f
+- Inner wall thickness:
+  - innerWallThickness = 0.42f
+
+Maze improvements already done:
+- Removed old flower grid and maze clutter.
+- Removed blue/orange/brown fake stones from maze.
+- Removed MazeEntryCourt raised gray platform.
+- Raised barriers so camera cannot easily see over them.
+- Added actual entrance gap.
+- Added denser spiral route.
+- Added bait walls:
+  - MazeEntryWestBaitStem
+  - MazeEntryWestBaitCap
+  - MazeEntryEastBaitStem
+  - MazeEntryEastBaitCap
+  - MazeSouthBaitStem
+  - MazeSouthBaitCap
+  - MazeChamberBaitStem
+- Added fake reward/decoy pedestals:
+  - MazeDecoyWest
+  - MazeDecoySouth
+  - MazeDecoyEast
+  - MazeDecoyChamber
+- Decoys now use a fragment-style cube silhouette instead of a random gem/prop.
+- Real maze fragment sits on MazeFragmentPedestal.
+- Real maze fragment position:
+  - MazeFragmentPedestalCenter = new Vector3(14.55f, 0.74f, -14.2f)
+  - MazeFragmentPosition = new Vector3(MazeFragmentPedestalCenter.x, 1.19f, MazeFragmentPedestalCenter.z)
+- The real fragment was raised because it clipped into its pedestal.
+
+Latest user reaction:
+- They liked the villainous red herring idea.
+- Then complained the real/main fragment clipped into the pedestal.
+- That was fixed and pushed in commit efb942d.
+
+Potential next maze tasks:
+- Playtest current maze.
+- Check if real fragment still clips.
+- Check if decoys are too obvious or too misleading.
+- Check if any route is blocked accidentally.
+- Add one more convincing false final chamber only if needed.
+- Make maze visually less boxy later, perhaps with varied hedge caps or broken wall silhouettes.
+
+============================================================
+TECHNICAL NOTES / PITFALLS
+============================================================
+
+Scene.cs has lots of runtime-generated geometry.
+Do not assume Unity scene file manually stores these objects; many are spawned by Scene.cs.
+
+Use apply_patch for edits.
+Use rg for searches.
+Do not use destructive git commands.
+Do not revert logs or user/editor files unless explicitly asked.
+
+Scene.cs recent important helper functions:
+- CreateMemoryFragment
+- CreateFragmentVisual
+- CreateMazeWall
+- CreateMazeMarker
+- CreateMazeDecoyPedestal
+- CreateCylinder
+- CreateBox
+- CreatePlatform
+- CreatePath
+- MakeVisualOnly
+- TrySetEmission
+
+FountainController.cs was simplified:
+- Removed water surface animation and water renderer handling.
+- Configure now takes only:
+  - Transform newFountainCore
+  - Renderer newCoreRenderer
+- It animates only the fountain core.
+
+Known dirty local files are from Unity/editor:
+- Logs changes/deletions
+- UserSettings layout files
+- Assets/_Recovery scenes
+- hadi_page1.png
+
+============================================================
+PLAYTEST HABIT
+============================================================
+
+When the next Codex makes changes, tell user explicitly:
+"Please playtest now" and list exactly what to check.
+
+Useful playtest checklist for maze:
+1. Can the player find the maze entrance?
+2. Are the walls tall enough from normal camera angle?
+3. Are there no random stones/platforms/ugly blobs left?
+4. Are the decoys convincing but not unfair?
+5. Is the real fragment reachable?
+6. Does the real fragment sit above the pedestal cleanly?
+7. Is any corridor too cramped for the ball/camera?
+
+============================================================
+CURRENT BEST NEXT STEP
+============================================================
+
+Ask user to playtest the maze after commit efb942d if they have not already.
+If they bring screenshots, locate the exact object in Scene.cs and edit directly.
+
+The next likely request will be more maze polish:
+- more red herrings
+- fewer ugly blocky props
+- fix clipping
+- make maze less readable
+- make route more complex but still possible
+
+============================================================
+END TRANSFER
+============================================================

@@ -21,7 +21,7 @@ public class Player : MonoBehaviour
 
     [Header("Jumping")]
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-    [SerializeField] private float jumpImpulse = 3.85f;
+    [SerializeField] private float jumpImpulse = 3.08f;
     [SerializeField] private float jumpBufferTime = 0.12f;
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpCooldown = 0.14f;
