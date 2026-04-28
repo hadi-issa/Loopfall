@@ -16,7 +16,7 @@ public class Scene : MonoBehaviour
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
-    private static Vector3 StoneParkourFragmentPosition => new(17f, 1.26f, 10.35f);
+    private static Vector3 StoneParkourFragmentPosition => new(17f, 3.78f, 10.35f);
     private static Vector3 MountainFragmentPedestalCenter => new(-14.75f, MountainPeakFragmentY - 0.26f, -8.1f);
     private static Vector3 MountainFragmentPosition => new(MountainFragmentPedestalCenter.x, MountainPeakFragmentY, MountainFragmentPedestalCenter.z);
     private static Vector3 MazeFragmentPedestalCenter => new(14.55f, 0.74f, -14.2f);
@@ -433,11 +433,11 @@ public class Scene : MonoBehaviour
         Vector3[] stones =
         {
             new(8.9f, 0.62f, 14.2f),
-            new(10.7f, 0.72f, 13.35f),
-            new(12.55f, 0.66f, 14.15f),
-            new(14.25f, 0.78f, 13.05f),
-            new(15.75f, 0.68f, 11.75f),
-            new(17.0f, 0.76f, 10.35f),
+            new(10.7f, 1.18f, 13.35f),
+            new(12.55f, 1.74f, 14.15f),
+            new(14.25f, 2.3f, 13.05f),
+            new(15.75f, 2.86f, 11.75f),
+            new(17.0f, 3.42f, 10.35f),
         };
 
         CreateStoneParkourHazard(parent, stones);
@@ -503,7 +503,7 @@ public class Scene : MonoBehaviour
             if (i > 0)
             {
                 float shelfWidth = 2.8f;
-                CreatePlatform(parent, $"MountainShelf_{i}", route[i], new Vector3(shelfWidth, 0.14f, shelfWidth * 0.72f), Quaternion.Euler(0f, -8f + i * 17f, 0f), stableGround, wornStone);
+                CreatePlatform(parent, $"MountainShelf_{i}", route[i], new Vector3(shelfWidth, 0.14f, shelfWidth * 0.72f), Quaternion.identity, stableGround, wornStone);
             }
         }
 
@@ -878,12 +878,22 @@ public class Scene : MonoBehaviour
         spike.transform.localRotation = Quaternion.Euler(0f, position.x * 31f + position.z * 17f, 0f);
         spike.transform.localScale = ScaleWorld(scale);
 
+        Mesh spikeMesh = CreateSpikeMesh(name);
         MeshFilter meshFilter = spike.AddComponent<MeshFilter>();
-        meshFilter.sharedMesh = CreateSpikeMesh(name);
+        meshFilter.sharedMesh = spikeMesh;
 
         Material material = CreateColorMaterial($"{name}Material", color);
         TrySetEmission(material, new Color(0.03f, 0.04f, 0.045f));
         spike.AddComponent<MeshRenderer>().sharedMaterial = material;
+
+        MeshCollider spikeCollider = spike.AddComponent<MeshCollider>();
+        spikeCollider.sharedMesh = spikeMesh;
+        spikeCollider.convex = false;
+        spikeCollider.isTrigger = false;
+
+        HazardVolume hazard = spike.AddComponent<HazardVolume>();
+        hazard.Configure("Landed on the spikes");
+
         return spike;
     }
 
@@ -1196,8 +1206,6 @@ public class Scene : MonoBehaviour
         Color pitColor = new(0.16f, 0.18f, 0.2f);
         GameObject pitFloor = CreateBox(parent, "StoneParkourSpikePit", center + Vector3.up * 0.05f, new Vector3(11.8f, 0.035f, 7.1f), pitRotation, CreateGroundMaterial(), pitColor);
         MakeVisualOnly(pitFloor);
-
-        CreateHazardBox(parent, "StoneParkourSpikeHazard", center + Vector3.up * 0.24f, new Vector3(11.8f, 0.44f, 7.1f), pitRotation, "Landed on the spikes");
 
         int spikeCount = 132;
         for (int i = 0; i < spikeCount; i++)

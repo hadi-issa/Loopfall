@@ -38,6 +38,16 @@ public class HazardVolume : MonoBehaviour
         TryTriggerDeath(other);
     }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        TryTriggerDeath(collision.collider);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        TryTriggerDeath(collision.collider);
+    }
+
     private void TryTriggerDeath(Collider other)
     {
         if (triggered || !other.TryGetComponent(out Player player))
