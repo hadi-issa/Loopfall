@@ -16,7 +16,9 @@ public class Scene : MonoBehaviour
     private static Vector3 PondCenter => new(-1.4f, 0f, 16.6f);
     private static Vector3 PondFragmentPlatformCenter => new(-4.05f, 0.74f, 18.95f);
     private static Vector3 PondFragmentPosition => new(PondFragmentPlatformCenter.x, 1.18f, PondFragmentPlatformCenter.z);
-    private static Vector3 StoneParkourFragmentPosition => new(17f, 3.78f, 10.35f);
+    private static Vector3 StoneParkourFragmentPosition => new(17f, 3.92f, 10.35f);
+    private static Vector3 PalmFragmentPedestalCenter => new(16.45f, 3.08f, 3.55f);
+    private static Vector3 PalmFragmentPosition => new(PalmFragmentPedestalCenter.x, 3.55f, PalmFragmentPedestalCenter.z);
     private static Vector3 MountainFragmentPedestalCenter => new(-14.75f, MountainPeakFragmentY - 0.26f, -8.1f);
     private static Vector3 MountainFragmentPosition => new(MountainFragmentPedestalCenter.x, MountainPeakFragmentY, MountainFragmentPedestalCenter.z);
     private static Vector3 MazeFragmentPedestalCenter => new(14.55f, 0.74f, -14.2f);
@@ -107,12 +109,32 @@ public class Scene : MonoBehaviour
 
     private void ConfigureEnvironment()
     {
+        int complexity = ResolveLoopComplexity();
+        Color ambientLight = new(0.34f, 0.37f, 0.42f);
+        Color fogColor = new(0.19f, 0.22f, 0.28f);
+        Color sunColor = new(0.82f, 0.86f, 0.96f);
+        float fogStart = 42f;
+        float fogEnd = 95f;
+        float sunIntensity = 1.15f;
+
+        switch (complexity)
+        {
+            case 2:
+                ambientLight = new Color(0.17f, 0.19f, 0.24f);
+                fogColor = new Color(0.09f, 0.11f, 0.16f);
+                sunColor = new Color(0.55f, 0.6f, 0.72f);
+                fogStart = 24f;
+                fogEnd = 62f;
+                sunIntensity = 0.62f;
+                break;
+        }
+
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.34f, 0.37f, 0.42f);
+        RenderSettings.ambientLight = ambientLight;
         RenderSettings.fog = true;
-        RenderSettings.fogColor = new Color(0.19f, 0.22f, 0.28f);
-        RenderSettings.fogStartDistance = ScaleWorld(42f);
-        RenderSettings.fogEndDistance = ScaleWorld(95f);
+        RenderSettings.fogColor = fogColor;
+        RenderSettings.fogStartDistance = ScaleWorld(fogStart);
+        RenderSettings.fogEndDistance = ScaleWorld(fogEnd);
 
         Light keyLight = FindFirstObjectByType<Light>();
         if (keyLight == null)
@@ -123,9 +145,14 @@ public class Scene : MonoBehaviour
         }
 
         keyLight.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
-        keyLight.color = new Color(0.82f, 0.86f, 0.96f);
-        keyLight.intensity = 1.15f;
+        keyLight.color = sunColor;
+        keyLight.intensity = sunIntensity;
         keyLight.shadows = LightShadows.Soft;
+    }
+
+    private static int ResolveLoopComplexity()
+    {
+        return LoopManager.Instance != null ? LoopManager.Instance.CurrentLoopIndex : 1;
     }
 
     private Player ConfigurePlayer()
@@ -463,6 +490,8 @@ public class Scene : MonoBehaviour
         CreatePalmTree(parent, new Vector3(10.6f, 0.2f, -1.8f), 2.6f);
         CreatePalmTree(parent, new Vector3(15.2f, 0.2f, -5.1f), 2.7f);
         CreatePalmTree(parent, new Vector3(12f, 0.2f, -6.2f), 2.5f);
+        CreatePalmFragmentRoute(parent, groundMaterial);
+        CreatePalmCourtDetails(parent);
     }
 
     private void CreateMountainGarden(Transform parent, PhysicsMaterial stableGround, PhysicsMaterial slickGround)
@@ -615,7 +644,7 @@ public class Scene : MonoBehaviour
         CreateMemoryFragment(parent, MountainFragmentPosition, FragmentType.Stabilizing);
         CreatePondFragmentPlatform(parent);
         CreateMemoryFragment(parent, PondFragmentPosition, FragmentType.Stabilizing);
-        CreateMemoryFragment(parent, new Vector3(15.1f, 0.95f, 2.3f), FragmentType.Corrupted);
+        CreateMemoryFragment(parent, PalmFragmentPosition, FragmentType.Corrupted);
         CreateMemoryFragment(parent, MazeFragmentPosition, FragmentType.Corrupted);
         CreateMemoryFragment(parent, StoneParkourFragmentPosition, FragmentType.Stabilizing);
 
@@ -1009,7 +1038,8 @@ public class Scene : MonoBehaviour
 
     private void CreateScatteredLilyPads(Transform parent, Vector3 center, float y)
     {
-        int count = Mathf.CeilToInt(Mathf.Max(58f, 58f * Config.MapHorizontalMultiplier * Config.MapHorizontalMultiplier));
+        float loopPadMultiplier = ResolveLoopComplexity() == 2 ? 0.72f : 1f;
+        int count = Mathf.CeilToInt(Mathf.Max(58f, 58f * Config.MapHorizontalMultiplier * Config.MapHorizontalMultiplier) * loopPadMultiplier);
         const float goldenAngle = 137.508f * Mathf.Deg2Rad;
 
         for (int i = 0; i < count; i++)
@@ -1036,6 +1066,11 @@ public class Scene : MonoBehaviour
         int companionCount = 2 + clusterIndex % 2;
         for (int i = 0; i < companionCount; i++)
         {
+            if (ResolveLoopComplexity() == 2 && (clusterIndex + i) % 4 == 0)
+            {
+                continue;
+            }
+
             float angle = (clusterIndex * 97.3f + i * 141.8f + Mathf.PerlinNoise(clusterIndex * 0.37f, i * 0.53f) * 45f) * Mathf.Deg2Rad;
             float distance = Mathf.Lerp(0.18f, 0.43f, Mathf.PerlinNoise(clusterIndex * 0.29f + i * 0.17f, 3.8f));
             Vector3 offset = new(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
@@ -1161,17 +1196,94 @@ public class Scene : MonoBehaviour
 
     private void CreatePalmTree(Transform parent, Vector3 position, float height)
     {
-        CreateCylinder(parent, $"PalmTrunk_{position.x:F1}_{position.z:F1}", position + Vector3.up * (height * 0.5f), new Vector3(0.22f, height * 0.5f, 0.22f), CreateGroundMaterial(), new Color(0.42f, 0.3f, 0.18f));
+        GameObject trunk = CreateCylinder(parent, $"PalmTrunk_{position.x:F1}_{position.z:F1}", position + Vector3.up * (height * 0.5f), new Vector3(0.22f, height * 0.5f, 0.22f), CreateGroundMaterial(), new Color(0.42f, 0.3f, 0.18f));
+        trunk.transform.localRotation = Quaternion.Euler(0f, position.x * 9f + position.z * 4f, (position.x + position.z) * 0.55f);
         Vector3 crownPosition = position + Vector3.up * (height + 0.03f);
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 5; i++)
         {
-            float angle = i / 6f * 360f;
-            Vector3 frondOffset = Quaternion.Euler(0f, angle, 0f) * new Vector3(0f, -0.02f, 0.72f);
-            GameObject frond = CreateDecorativeSphere(parent, $"Frond_{position.x:F1}_{position.z:F1}_{i}", crownPosition + frondOffset, new Vector3(0.58f, 0.14f, 2.05f), CreateGroundMaterial(), new Color(0.26f, 0.58f, 0.28f));
-            MakeVisualOnly(frond);
-            frond.transform.localRotation = Quaternion.Euler(18f, angle, 14f);
+            float bandHeight = Mathf.Lerp(0.34f, height - 0.28f, i / 4f);
+            GameObject band = CreateCylinder(parent, $"PalmTrunkBand_{position.x:F1}_{position.z:F1}_{i}", position + Vector3.up * bandHeight, new Vector3(0.235f, 0.018f, 0.235f), CreateGroundMaterial(), new Color(0.29f, 0.2f, 0.13f));
+            MakeVisualOnly(band);
         }
+
+        for (int layer = 0; layer < 2; layer++)
+        {
+            int frondCount = layer == 0 ? 7 : 5;
+            float layerLift = layer == 0 ? 0f : 0.16f;
+            float layerTwist = layer == 0 ? 0f : 24f;
+            for (int i = 0; i < frondCount; i++)
+            {
+                float angle = i / (float)frondCount * 360f + layerTwist;
+                Vector3 frondOffset = Quaternion.Euler(0f, angle, 0f) * new Vector3(0f, -0.02f + layerLift, 0.62f + layer * 0.1f);
+                Color frondColor = layer == 0 ? new Color(0.25f, 0.56f, 0.27f) : new Color(0.36f, 0.68f, 0.34f);
+                GameObject frond = CreateDecorativeSphere(parent, $"Frond_{position.x:F1}_{position.z:F1}_{layer}_{i}", crownPosition + frondOffset, new Vector3(0.5f, 0.1f, 1.78f - layer * 0.22f), CreateGroundMaterial(), frondColor);
+                MakeVisualOnly(frond);
+                frond.transform.localRotation = Quaternion.Euler(16f - layer * 6f, angle, 12f + i * 3f);
+            }
+        }
+
+    }
+
+    private void CreatePalmFragmentRoute(Transform parent, PhysicsMaterial groundMaterial)
+    {
+        Color rootColor = new(0.38f, 0.27f, 0.16f);
+        Color cutPalmColor = new(0.56f, 0.42f, 0.24f);
+        Vector3[] steps =
+        {
+            new(10.45f, 0.34f, -4.82f),
+            new(11.12f, 0.48f, -4.18f),
+            new(11.82f, 0.62f, -3.55f),
+            new(11.72f, 0.9f, -2.1f),
+            new(12.42f, 1.04f, -1.38f),
+            new(13.18f, 1.18f, -0.72f),
+            new(13.9f, 1.32f, -0.02f),
+            new(13.12f, 1.46f, 0.72f),
+            new(13.92f, 1.6f, 1.32f),
+            new(14.72f, 1.74f, 1.9f),
+            new(15.55f, 1.88f, 2.4f),
+            new(14.78f, 2.02f, 2.92f),
+            new(15.58f, 2.16f, 3.28f),
+            new(16.16f, 2.3f, 2.82f),
+            new(16.45f, 2.48f, 3.55f),
+        };
+
+        for (int i = 0; i < steps.Length; i++)
+        {
+            float angle = 28f + i * 37f;
+            float width = i % 3 == 0 ? 0.42f : 0.34f;
+            GameObject step = CreateCylinder(parent, $"PalmRootStep_{i + 1}", steps[i], new Vector3(width, 0.055f, 0.24f), groundMaterial, Color.Lerp(rootColor, cutPalmColor, i / (float)(steps.Length - 1)));
+            step.transform.localRotation = Quaternion.Euler(0f, angle, i % 2 == 0 ? 9f : -9f);
+        }
+
+        CreatePlatform(parent, "PalmRootBridgeLower", new Vector3(12.15f, 0.93f, -2.08f), new Vector3(1.3f, 0.08f, 0.22f), Quaternion.Euler(0f, 42f, -7f), groundMaterial, rootColor);
+        CreatePlatform(parent, "PalmRootBridgeMiddle", new Vector3(13.5f, 1.55f, 0.62f), new Vector3(1.7f, 0.075f, 0.2f), Quaternion.Euler(0f, 40f, 6f), groundMaterial, rootColor);
+        CreatePlatform(parent, "PalmRootBridgeUpper", new Vector3(15.52f, 2.24f, 3.05f), new Vector3(1.35f, 0.07f, 0.18f), Quaternion.Euler(0f, 22f, -8f), groundMaterial, rootColor);
+
+        GameObject pedestal = CreateCylinder(parent, "PalmFragmentPedestal", PalmFragmentPedestalCenter, new Vector3(0.46f, 0.16f, 0.46f), groundMaterial, new Color(0.48f, 0.37f, 0.22f));
+        TrySetEmission(pedestal.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.05f, 0.035f, 0.02f));
+
+        GameObject crownRing = CreateCylinder(parent, "PalmFragmentCrownRing", PalmFragmentPedestalCenter + Vector3.up * 0.18f, new Vector3(0.33f, 0.03f, 0.33f), groundMaterial, new Color(0.28f, 0.5f, 0.24f));
+        MakeVisualOnly(crownRing);
+    }
+
+    private void CreatePalmCourtDetails(Transform parent)
+    {
+        Vector3[] groundFronds =
+        {
+            new(13.8f, 0.22f, 2.55f),
+            new(16.0f, 0.22f, -0.48f),
+            new(11.0f, 0.22f, -3.1f),
+            new(14.4f, 0.22f, -6.0f),
+        };
+
+        for (int i = 0; i < groundFronds.Length; i++)
+        {
+            GameObject fallenFrond = CreateDecorativeSphere(parent, $"FallenPalmFrond_{i}", groundFronds[i], new Vector3(0.18f, 0.045f, 1.45f), CreateGroundMaterial(), new Color(0.32f, 0.55f, 0.25f));
+            fallenFrond.transform.localRotation = Quaternion.Euler(4f, 28f + i * 61f, 8f);
+            MakeVisualOnly(fallenFrond);
+        }
+
     }
 
     private void CreateScatteredPebbles(Transform parent, Vector3 center, int count, float radius)

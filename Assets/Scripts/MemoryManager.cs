@@ -7,6 +7,7 @@ public class MemoryManager : MonoBehaviour
 
     public int StabilizingFragments { get; private set; }
     public int CorruptedFragments { get; private set; }
+    public int TotalFragments => StabilizingFragments + CorruptedFragments;
 
     public static MemoryManager EnsureExists()
     {

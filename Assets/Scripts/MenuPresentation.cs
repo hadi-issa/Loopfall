@@ -9,7 +9,7 @@ public class MenuPresentation : MonoBehaviour
 
     private readonly string[] realityMessages =
     {
-        "Roll through collapsing architecture. Gather memory fragments. Offer them at shrines. Hold onto what the loop keeps trying to take away.",
+        "Roll through collapsing architecture. Gather memory fragments. Hold onto what the loop keeps trying to take away.",
         "Every restart preserves knowledge, not comfort. The world decays faster, the path feels less certain, and memory becomes the only map that matters.",
     };
 

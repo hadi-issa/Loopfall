@@ -49,6 +49,13 @@ public class LoopManager : MonoBehaviour
         ReloadActiveScene();
     }
 
+    public void SetLoopIndex(int loopIndex, string reason)
+    {
+        CurrentLoopIndex = Mathf.Clamp(loopIndex, 1, Config.MaxLoops);
+        Debug.Log($"Loop debug switch: {reason}. Entering loop {CurrentLoopIndex}.");
+        ReloadActiveScene();
+    }
+
     public void RestartCurrentLoop(string reason)
     {
         Debug.Log($"Loop restart: {reason}. Staying on loop {CurrentLoopIndex}.");

@@ -12,6 +12,7 @@ namespace Game
     {
         public const string MainSceneName = "Loopfall";
         public const int MaxLoops = 10;
+        public const int FragmentsRequiredForLoopAdvance = 5;
         public const float WorldScale = 1.6f;
         public const float MapHorizontalMultiplier = 2.5f;
         public const float MapVerticalMultiplier = 2.5f;
