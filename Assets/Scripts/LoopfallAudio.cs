@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,6 +11,7 @@ public enum LoopfallCue
     MenuDrone,
     MenuWarmPad,
     MenuStatic,
+    LoopTwoStatic,
     MenuGlitchTick,
     MenuGlitchBurst,
     CrashSting,
@@ -36,12 +38,14 @@ public class LoopfallAudio : MonoBehaviour
     private readonly Dictionary<LoopfallCue, AudioClip> clipCache = new();
 
     private AudioSource uiSource = null!;
+    private AudioSource loopTwoStaticSource = null!;
     private float nextMenuArtifactTime;
     private bool crashFlickerActive;
     private float crashFlickerUntil;
     private float nextCrashFlickerTime;
     private bool startTransitionActive;
     private float startTransitionUntil;
+    private float loopTwoStaticVolume;
 
     public static LoopfallAudio EnsureExists()
     {
@@ -196,6 +200,7 @@ public class LoopfallAudio : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         uiSource = CreateChildSource("UI");
+        EnsureLoopTwoStaticSource();
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;
     }
@@ -212,6 +217,7 @@ public class LoopfallAudio : MonoBehaviour
     private void Update()
     {
         UpdateCrashFlicker();
+        UpdateLoopTwoStatic();
     }
 
     private void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
@@ -268,6 +274,60 @@ public class LoopfallAudio : MonoBehaviour
         nextCrashFlickerTime = Time.unscaledTime + UnityEngine.Random.Range(0.014f, 0.032f);
     }
 
+    private void UpdateLoopTwoStatic()
+    {
+        EnsureLoopTwoStaticSource();
+        if (loopTwoStaticSource == null)
+        {
+            return;
+        }
+
+        int loopIndex = LoopManager.Instance != null ? LoopManager.Instance.CurrentLoopIndex : 1;
+        bool shouldPlay = SceneManager.GetActiveScene().name == Config.MainSceneName
+            && LoopManager.Instance != null
+            && (loopIndex == 2 || loopIndex == 3);
+
+        if (!shouldPlay)
+        {
+            loopTwoStaticVolume = Mathf.MoveTowards(loopTwoStaticVolume, 0f, Time.unscaledDeltaTime * 0.35f);
+            loopTwoStaticSource.volume = loopTwoStaticVolume;
+            if (loopTwoStaticVolume <= 0.001f && loopTwoStaticSource.isPlaying)
+            {
+                loopTwoStaticSource.Stop();
+            }
+
+            return;
+        }
+
+        if (!loopTwoStaticSource.isPlaying)
+        {
+            loopTwoStaticSource.Play();
+        }
+
+        float musicTime = LoopfallMusic.EnsureExists().GameplayPlaybackTime;
+        bool loopThree = loopIndex == 3;
+        float slowDrift = Mathf.PerlinNoise(8.17f, musicTime * (loopThree ? 0.18f : 0.11f));
+        float mediumDrift = Mathf.PerlinNoise(21.9f, musicTime * Mathf.Lerp(loopThree ? 0.46f : 0.32f, loopThree ? 0.88f : 0.58f, slowDrift));
+        float quickFlicker = Mathf.PerlinNoise(47.3f, musicTime * Mathf.Lerp(loopThree ? 2.4f : 1.6f, loopThree ? 4.1f : 2.7f, mediumDrift));
+        float irregularFade = Mathf.SmoothStep(0.46f, 0.92f, mediumDrift) * Mathf.SmoothStep(0.28f, 0.82f, quickFlicker);
+        float targetVolume = Mathf.Lerp(0f, loopThree ? 0.165f : 0.105f, irregularFade);
+
+        loopTwoStaticVolume = Mathf.MoveTowards(loopTwoStaticVolume, targetVolume, Time.unscaledDeltaTime * (loopThree ? 0.22f : 0.14f));
+        loopTwoStaticSource.volume = loopTwoStaticVolume;
+        loopTwoStaticSource.pitch = loopThree ? Mathf.Lerp(0.72f, 0.94f, quickFlicker) : 0.86f;
+    }
+
+    private void EnsureLoopTwoStaticSource()
+    {
+        if (loopTwoStaticSource != null)
+        {
+            return;
+        }
+
+        loopTwoStaticSource = CreateChildSource("Loop 02 Static");
+        ConfigureLoopSource(loopTwoStaticSource, LoopfallCue.LoopTwoStatic, 0f, 0.88f, 0f);
+    }
+
     private AudioClip BuildClip(LoopfallCue cue)
     {
         return cue switch
@@ -302,6 +362,13 @@ public class LoopfallAudio : MonoBehaviour
             {
                 float mod = 0.45f + Mathf.Sin(t * 18f) * 0.15f + Mathf.Sin(t * 7f) * 0.08f;
                 return Noise(i) * mod * 0.25f;
+            }),
+            LoopfallCue.LoopTwoStatic => CreateClip("LoopTwoStatic", 3f, (i, t) =>
+            {
+                float breath = 0.62f + Mathf.Sin(t * 5.1f) * 0.18f + Mathf.Sin(t * 13.7f) * 0.08f;
+                float grit = Noise(i * 7) * 0.72f;
+                float hiss = Noise(i * 31 + 17) * 0.42f;
+                return (grit + hiss) * breath * 0.55f;
             }),
             LoopfallCue.MenuGlitchTick => CreateClip("MenuGlitchTick", 0.08f, (i, t) =>
             {

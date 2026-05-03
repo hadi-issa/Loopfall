@@ -29,6 +29,7 @@ public sealed class LoopfallMusic : MonoBehaviour
     }
 
     public static LoopfallMusic Instance { get; private set; } = null!;
+    public float GameplayPlaybackTime => gameplaySource != null && gameplaySource.clip == gameplayClip ? gameplaySource.time : Time.unscaledTime;
 
     private AudioSource menuSource = null!;
     private AudioSource gameplaySource = null!;

@@ -127,6 +127,14 @@ public class Scene : MonoBehaviour
                 fogEnd = 62f;
                 sunIntensity = 0.62f;
                 break;
+            case 3:
+                ambientLight = new Color(0.12f, 0.14f, 0.19f);
+                fogColor = new Color(0.065f, 0.08f, 0.13f);
+                sunColor = new Color(0.42f, 0.48f, 0.64f);
+                fogStart = 18f;
+                fogEnd = 48f;
+                sunIntensity = 0.42f;
+                break;
         }
 
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
@@ -153,6 +161,12 @@ public class Scene : MonoBehaviour
     private static int ResolveLoopComplexity()
     {
         return LoopManager.Instance != null ? LoopManager.Instance.CurrentLoopIndex : 1;
+    }
+
+    private static bool UsesLoopTwoCorruption()
+    {
+        int complexity = ResolveLoopComplexity();
+        return complexity == 2 || complexity == 3;
     }
 
     private Player ConfigurePlayer()
@@ -496,7 +510,7 @@ public class Scene : MonoBehaviour
 
     private void CreateMountainGarden(Transform parent, PhysicsMaterial stableGround, PhysicsMaterial slickGround)
     {
-        const int switchbackCount = 15;
+        int switchbackCount = UsesLoopTwoCorruption() ? 30 : 15;
         const float mountainBaseY = 0.58f;
         const float mountainPeakCapY = MountainPeakFragmentY - 0.45f;
         Color grassTint = new(0.46f, 0.62f, 0.36f);
@@ -637,6 +651,36 @@ public class Scene : MonoBehaviour
         CreateMazeMarker(parent, "MazeEntryMarkerEast", mazeCenter + new Vector3(1.15f, 0.15f, 5.45f), groundMaterial, hedgeTint, new Color(0.56f, 0.84f, 0.72f));
         CreateMazeMarker(parent, "MazeChamberMarker", mazeCenter + new Vector3(0.15f, 0.15f, -1.1f), groundMaterial, hedgeTint, new Color(0.86f, 0.52f, 0.56f));
 
+        if (UsesLoopTwoCorruption())
+        {
+            CreateLoopTwoMazeBrutality(parent, mazeCenter, mazeRotation, groundMaterial, fragmentRotation);
+        }
+    }
+
+    private void CreateLoopTwoMazeBrutality(Transform parent, Vector3 mazeCenter, float mazeRotation, PhysicsMaterial groundMaterial, Quaternion fragmentRotation)
+    {
+        const float wallHeight = 3.15f;
+        const float wallThickness = 0.34f;
+        Color decoyBase = new(0.34f, 0.42f, 0.34f);
+        Color decoyGlow = new(0.86f, 0.36f, 0.38f);
+
+        CreateMazeWall(parent, "Loop02MazeEntryNeedleWest", mazeCenter + new Vector3(-0.78f, 0f, 4.35f), new Vector3(wallThickness, wallHeight, 1.7f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeEntryNeedleEast", mazeCenter + new Vector3(0.82f, 0f, 3.55f), new Vector3(wallThickness, wallHeight, 1.85f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeFalseDoorSeal", mazeCenter + new Vector3(-3.72f, 0f, 2.05f), new Vector3(1.65f, wallHeight, wallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeWestReturnHook", mazeCenter + new Vector3(-4.0f, 0f, -1.95f), new Vector3(1.75f, wallHeight, wallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeSouthNeedleA", mazeCenter + new Vector3(-0.05f, 0f, -4.18f), new Vector3(wallThickness, wallHeight, 1.55f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeSouthNeedleB", mazeCenter + new Vector3(1.05f, 0f, -3.72f), new Vector3(wallThickness, wallHeight, 1.4f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeInnerChokeNorth", mazeCenter + new Vector3(1.85f, 0f, 1.05f), new Vector3(1.75f, wallHeight, wallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeInnerChokeSouth", mazeCenter + new Vector3(2.45f, 0f, -2.55f), new Vector3(1.55f, wallHeight, wallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeEastBaitSeal", mazeCenter + new Vector3(4.72f, 0f, 1.05f), new Vector3(wallThickness, wallHeight, 2.65f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeFinalCombA", mazeCenter + new Vector3(2.95f, 0f, -0.22f), new Vector3(wallThickness, wallHeight, 1.15f), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeFinalCombB", mazeCenter + new Vector3(1.12f, 0f, -1.35f), new Vector3(1.35f, wallHeight, wallThickness), mazeRotation, groundMaterial);
+        CreateMazeWall(parent, "Loop02MazeFinalCombC", mazeCenter + new Vector3(3.12f, 0f, -1.72f), new Vector3(wallThickness, wallHeight, 1.1f), mazeRotation, groundMaterial);
+
+        CreateMazeDecoyPedestal(parent, "Loop02MazeDecoyEntry", mazeCenter + new Vector3(0.05f, 0.66f, 3.9f), new Vector3(0.42f, 0.14f, 0.42f), groundMaterial, decoyBase, decoyGlow, 0.38f, 0.16f, fragmentRotation);
+        CreateMazeDecoyPedestal(parent, "Loop02MazeDecoyWestPocket", mazeCenter + new Vector3(-4.18f, 0.66f, -1.15f), new Vector3(0.44f, 0.14f, 0.44f), groundMaterial, decoyBase, decoyGlow, 0.4f, 0.16f, fragmentRotation);
+        CreateMazeDecoyPedestal(parent, "Loop02MazeDecoySouthPocket", mazeCenter + new Vector3(0.6f, 0.66f, -4.28f), new Vector3(0.42f, 0.14f, 0.42f), groundMaterial, decoyBase, decoyGlow, 0.38f, 0.16f, fragmentRotation);
+        CreateMazeDecoyPedestal(parent, "Loop02MazeDecoyFinal", mazeCenter + new Vector3(3.65f, 0.66f, -0.95f), new Vector3(0.4f, 0.14f, 0.4f), groundMaterial, decoyBase, decoyGlow, 0.36f, 0.15f, fragmentRotation);
     }
 
     private void CreateMemoryFragmentsAndOldVersionReference(Transform parent)
@@ -656,6 +700,12 @@ public class Scene : MonoBehaviour
     private void CreatePoolBroadwayRelic(Transform parent, PhysicsMaterial groundMaterial)
     {
         Vector3 relicPosition = new(5.6f, 0.62f, 18.9f);
+        if (ResolveLoopComplexity() == 3)
+        {
+            CreatePoolBroadwayGlitchRemnant(parent, groundMaterial, relicPosition);
+            return;
+        }
+
         CreatePlatform(parent, "PoolBroadwayLaunchPad", new Vector3(relicPosition.x, 0.29f, relicPosition.z), new Vector3(2.25f, 0.22f, 2.25f), Quaternion.Euler(0f, 11f, 0f), groundMaterial, new Color(0.34f, 0.31f, 0.26f));
 
         GameObject poolBroadway = CreateBox(parent, "PoolBroadway", relicPosition, new Vector3(1.15f, 0.22f, 1.15f), Quaternion.Euler(0f, 27f, 0f), groundMaterial, new Color(0.48f, 0.34f, 0.26f));
@@ -665,6 +715,36 @@ public class Scene : MonoBehaviour
 
         PoolBroadwayFlinger flinger = poolBroadway.AddComponent<PoolBroadwayFlinger>();
         flinger.Configure(poolBroadway.transform.localPosition, poolBroadway.transform.localRotation);
+    }
+
+    private void CreatePoolBroadwayGlitchRemnant(Transform parent, PhysicsMaterial groundMaterial, Vector3 relicPosition)
+    {
+        GameObject scar = CreatePlatform(parent, "PoolBroadwayMemoryScar", new Vector3(relicPosition.x, 0.285f, relicPosition.z), new Vector3(2.35f, 0.08f, 2.05f), Quaternion.Euler(0f, 11f, 0f), groundMaterial, new Color(0.075f, 0.09f, 0.12f));
+        TrySetEmission(scar.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.02f, 0.045f, 0.06f));
+
+        Vector3[] shardOffsets =
+        {
+            new(-0.62f, 0.16f, -0.44f),
+            new(-0.34f, 0.32f, 0.18f),
+            new(0.12f, 0.2f, -0.2f),
+            new(0.48f, 0.36f, 0.34f),
+            new(0.74f, 0.18f, -0.5f),
+            new(-0.08f, 0.5f, 0.56f),
+        };
+
+        for (int i = 0; i < shardOffsets.Length; i++)
+        {
+            Vector3 position = relicPosition + shardOffsets[i];
+            Vector3 scale = new(0.32f + (i % 2) * 0.18f, 0.035f, 0.08f + (i % 3) * 0.035f);
+            Color color = i % 2 == 0 ? new Color(0.34f, 0.78f, 0.86f) : new Color(0.82f, 0.35f, 0.58f);
+            GameObject shard = CreateBox(parent, $"PoolBroadwayMissingSignal_{i + 1}", position, scale, Quaternion.Euler(i * 9f, 27f + i * 19f, i % 2 == 0 ? 7f : -11f), groundMaterial, color * 0.72f);
+            MakeVisualOnly(shard);
+            TrySetEmission(shard.GetComponent<MeshRenderer>().sharedMaterial, color * 0.24f);
+        }
+
+        GameObject absence = CreateBox(parent, "PoolBroadwayAbsentOutline", relicPosition + new Vector3(0f, 0.39f, 0f), new Vector3(1.18f, 0.035f, 1.18f), Quaternion.Euler(0f, 27f, 0f), groundMaterial, new Color(0.02f, 0.025f, 0.03f));
+        MakeVisualOnly(absence);
+        TrySetEmission(absence.GetComponent<MeshRenderer>().sharedMaterial, new Color(0.0f, 0.045f, 0.055f));
     }
 
     private void CreateOldVersionMemorial(Transform parent, Vector3 position)
@@ -1038,7 +1118,7 @@ public class Scene : MonoBehaviour
 
     private void CreateScatteredLilyPads(Transform parent, Vector3 center, float y)
     {
-        float loopPadMultiplier = ResolveLoopComplexity() == 2 ? 0.72f : 1f;
+        float loopPadMultiplier = UsesLoopTwoCorruption() ? 0.72f : 1f;
         int count = Mathf.CeilToInt(Mathf.Max(58f, 58f * Config.MapHorizontalMultiplier * Config.MapHorizontalMultiplier) * loopPadMultiplier);
         const float goldenAngle = 137.508f * Mathf.Deg2Rad;
 
@@ -1066,7 +1146,7 @@ public class Scene : MonoBehaviour
         int companionCount = 2 + clusterIndex % 2;
         for (int i = 0; i < companionCount; i++)
         {
-            if (ResolveLoopComplexity() == 2 && (clusterIndex + i) % 4 == 0)
+            if (UsesLoopTwoCorruption() && (clusterIndex + i) % 4 == 0)
             {
                 continue;
             }
@@ -1234,7 +1314,6 @@ public class Scene : MonoBehaviour
             new(10.45f, 0.34f, -4.82f),
             new(11.12f, 0.48f, -4.18f),
             new(11.82f, 0.62f, -3.55f),
-            new(11.72f, 0.9f, -2.1f),
             new(12.42f, 1.04f, -1.38f),
             new(13.18f, 1.18f, -0.72f),
             new(13.9f, 1.32f, -0.02f),
@@ -1252,8 +1331,14 @@ public class Scene : MonoBehaviour
         {
             float angle = 28f + i * 37f;
             float width = i % 3 == 0 ? 0.42f : 0.34f;
-            GameObject step = CreateCylinder(parent, $"PalmRootStep_{i + 1}", steps[i], new Vector3(width, 0.055f, 0.24f), groundMaterial, Color.Lerp(rootColor, cutPalmColor, i / (float)(steps.Length - 1)));
+            GameObject step = CreateCylinder(parent, $"PalmRootStep_{i + 1}", steps[i], new Vector3(width, 0.055f, 0.24f), groundMaterial, Color.Lerp(rootColor, cutPalmColor, i / 15f));
             step.transform.localRotation = Quaternion.Euler(0f, angle, i % 2 == 0 ? 9f : -9f);
+        }
+
+        if (ResolveLoopComplexity() == 1)
+        {
+            GameObject fourthStump = CreateCylinder(parent, "PalmRootStep_4_Loop01", new Vector3(12.45f, 0.76f, -2.85f), new Vector3(0.42f, 0.055f, 0.24f), groundMaterial, Color.Lerp(rootColor, cutPalmColor, 3f / 15f));
+            fourthStump.transform.localRotation = Quaternion.Euler(0f, 139f, -9f);
         }
 
         CreatePlatform(parent, "PalmRootBridgeLower", new Vector3(12.15f, 0.93f, -2.08f), new Vector3(1.3f, 0.08f, 0.22f), Quaternion.Euler(0f, 42f, -7f), groundMaterial, rootColor);

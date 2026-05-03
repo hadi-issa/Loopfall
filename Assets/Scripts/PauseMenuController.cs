@@ -11,6 +11,8 @@ public sealed class PauseMenuController : MonoBehaviour
     private CanvasGroup canvasGroup = null!;
     private RectTransform panel = null!;
     private TMP_Text loopText = null!;
+    private Image loopGlitchPlate = null!;
+    private Image[] loopGlitchBars = null!;
     private Button resumeButton = null!;
     private Button menuButton = null!;
     private Button quitButton = null!;
@@ -67,6 +69,7 @@ public sealed class PauseMenuController : MonoBehaviour
             return;
         }
 
+        EnsureLoopGlitchMask();
         UpdateLoopText();
         EnsureEventSystem();
         EventSystem.current?.SetSelectedGameObject(resumeButton.gameObject);
@@ -106,6 +109,7 @@ public sealed class PauseMenuController : MonoBehaviour
         UpdateLoopText();
         float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 1.8f) * 0.5f;
         panel.localScale = Vector3.Lerp(panel.localScale, Vector3.one * (0.985f + pulse * 0.015f), 5f * Time.unscaledDeltaTime);
+        AnimateLoopGlitchBars();
     }
 
     private void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
@@ -172,6 +176,7 @@ public sealed class PauseMenuController : MonoBehaviour
         loopText.rectTransform.anchorMax = new Vector2(0.88f, 0.64f);
         loopText.rectTransform.offsetMin = Vector2.zero;
         loopText.rectTransform.offsetMax = Vector2.zero;
+        BuildLoopGlitchMask(panel);
 
         RectTransform buttonRoot = new GameObject("PauseButtons", typeof(RectTransform)).GetComponent<RectTransform>();
         buttonRoot.SetParent(panel, false);
@@ -229,8 +234,95 @@ public sealed class PauseMenuController : MonoBehaviour
 
     private void UpdateLoopText()
     {
-        int loop = LoopManager.Instance != null ? LoopManager.Instance.CurrentLoopIndex : 1;
-        loopText.text = $"LOOP {loop:00} / {Game.Config.MaxLoops:00}    WORLD SPEED: {Game.Config.PauseTimeScale * 100f:0}%";
+        if (loopText == null)
+        {
+            GameObject loopStateObject = GameObject.Find("PauseLoopState");
+            loopText = loopStateObject != null ? loopStateObject.GetComponent<TMP_Text>() : null!;
+        }
+
+        if (loopText == null)
+        {
+            return;
+        }
+
+        loopText.text = "SIGNAL LOST    LOOP DATA UNREADABLE";
+        loopText.color = new Color(0.84f, 0.98f, 0.82f, 0.36f);
+    }
+
+    private void BuildLoopGlitchMask(RectTransform parent)
+    {
+        loopGlitchPlate = CreateImage("PauseLoopGlitchPlate", parent, new Color(0.015f, 0.06f, 0.045f, 0.82f));
+        RectTransform plateRect = loopGlitchPlate.rectTransform;
+        plateRect.anchorMin = new Vector2(0.105f, 0.565f);
+        plateRect.anchorMax = new Vector2(0.89f, 0.655f);
+        plateRect.offsetMin = Vector2.zero;
+        plateRect.offsetMax = Vector2.zero;
+        loopGlitchPlate.raycastTarget = false;
+        loopGlitchPlate.transform.SetAsLastSibling();
+
+        loopGlitchBars = new Image[11];
+        for (int i = 0; i < loopGlitchBars.Length; i++)
+        {
+            Image bar = CreateImage($"PauseLoopGlitch_{i}", parent, new Color(0.72f, 0.92f, 0.82f, 0.42f));
+            RectTransform rect = bar.rectTransform;
+            rect.anchorMin = new Vector2(0.11f, 0.57f + i * 0.007f);
+            rect.anchorMax = new Vector2(0.88f, 0.576f + i * 0.007f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            bar.raycastTarget = false;
+            bar.transform.SetAsLastSibling();
+            loopGlitchBars[i] = bar;
+        }
+    }
+
+    private void EnsureLoopGlitchMask()
+    {
+        if (loopGlitchPlate != null && loopGlitchBars != null && loopGlitchBars.Length > 0 && loopGlitchBars[0] != null)
+        {
+            loopGlitchPlate.transform.SetAsLastSibling();
+            for (int i = 0; i < loopGlitchBars.Length; i++)
+            {
+                if (loopGlitchBars[i] != null)
+                {
+                    loopGlitchBars[i].transform.SetAsLastSibling();
+                }
+            }
+
+            return;
+        }
+
+        if (panel != null)
+        {
+            BuildLoopGlitchMask(panel);
+        }
+    }
+
+    private void AnimateLoopGlitchBars()
+    {
+        if (loopGlitchBars == null)
+        {
+            return;
+        }
+
+        if (loopGlitchPlate != null)
+        {
+            float plateNoise = Mathf.PerlinNoise(3.91f, Time.unscaledTime * 4.8f);
+            loopGlitchPlate.color = new Color(0.015f, 0.06f, 0.045f, Mathf.Lerp(0.72f, 0.9f, plateNoise));
+        }
+
+        for (int i = 0; i < loopGlitchBars.Length; i++)
+        {
+            Image bar = loopGlitchBars[i];
+            if (bar == null)
+            {
+                continue;
+            }
+
+            float noise = Mathf.PerlinNoise(i * 0.43f, Time.unscaledTime * 7.5f);
+            RectTransform rect = bar.rectTransform;
+            rect.anchoredPosition = new Vector2(Mathf.Lerp(-34f, 34f, noise), 0f);
+            bar.color = new Color(0.72f, 0.92f, 0.82f, Mathf.Lerp(0.28f, 0.7f, noise));
+        }
     }
 
     private static Image CreateImage(string name, Transform parent, Color color)
